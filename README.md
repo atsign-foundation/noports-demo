@@ -23,6 +23,8 @@ cd noports-demo
 ./demo.sh --step
 ```
 
+The demo pauses after each step; press Enter to move on.
+
 The first run takes 1–3 minutes. Nothing leaves your computer, and you need
 no accounts and no sign-up.
 
