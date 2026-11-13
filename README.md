@@ -5,6 +5,10 @@ ports of that same machine while you are logged in. The scan finds nothing
 open. Everything runs on your computer in Docker. You need no accounts and no
 purchased atSigns, and after the first run you need no Internet access.
 
+For a visual walkthrough of how it all fits together, with a diagram for each
+part, see the slide deck
+[docs/noports-demo-explained.pptx](docs/noports-demo-explained.pptx).
+
 ## Quick start
 
 1. Install Docker: Docker Desktop on macOS, or Docker Engine with the Compose
@@ -114,6 +118,7 @@ yourself.
 | [demo.sh](demo.sh) | Setup, then the four acts. Every command it runs is printed before its output. |
 | [doctor.sh](doctor.sh) | Ordered checks, each with a cause and a fix. |
 | [teardown.sh](teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
+| [docs/noports-demo-explained.pptx](docs/noports-demo-explained.pptx) | Slide deck explaining the demo, with diagrams. |
 | [scripts/in-container/](scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an atSign, open the SSH session, and list sockets. |
 
 ## Versions
