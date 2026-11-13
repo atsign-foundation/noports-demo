@@ -1,0 +1,9 @@
+#!/bin/sh
+# Prints the newest NoPorts release tag (e.g. v5.18.2), or nothing if GitHub
+# can't be reached. The noports repo also publishes desktop app releases,
+# tags like a1.2.2, and prereleases, so this takes the newest release that is
+# not a draft or prerelease and has a plain vX.Y.Z tag.
+curl -fsS --max-time 10 'https://api.github.com/repos/atsign-foundation/noports/releases?per_page=30' 2>/dev/null |
+awk '/^    "tag_name":/   { tag = $2; gsub(/[",]/, "", tag) }
+     /^    "draft":/      { draft = $2 }
+     /^    "prerelease":/ { if (draft == "false," && $2 == "false," && tag ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) { print tag; exit } }'

@@ -26,7 +26,8 @@ services:
   platform:
     # Atsign's ephemeral environment: an atDirectory and one atServer per
     # atSign listed in platform/atsigns. Stands in for Atsign's cloud.
-    image: atsigncompany/ephemeral@sha256:8451e0f1d9261930ea28756ea02a20ffd9bbd8185c3a3f824db45950053b3736
+    # demo.sh pulls a newer :latest whenever the Internet is reachable.
+    image: atsigncompany/ephemeral:latest
     hostname: platform
     environment:
       FIRST_PORT: 2500
@@ -49,29 +50,29 @@ services:
 
   relay:
     <<: *noports
-    build: { context: ., target: relay }
-    image: noports-demo/relay:5.18.2
+    build: { context: ., target: relay, args: { NOPORTS_VERSION: "${NOPORTS_VERSION:-latest}" } }
+    image: noports-demo/relay
     hostname: relay
     volumes: [relay-keys:/home/demo/.atsign/keys]
 
   device:
     <<: *noports
-    build: { context: ., target: device }
-    image: noports-demo/device:5.18.2
+    build: { context: ., target: device, args: { NOPORTS_VERSION: "${NOPORTS_VERSION:-latest}" } }
+    image: noports-demo/device
     hostname: device
     volumes: [device-keys:/home/demo/.atsign/keys]
     # Note: no "ports:" section. Nothing is published, and sshd binds 127.0.0.1.
 
   client:
     <<: *noports
-    build: { context: ., target: client }
-    image: noports-demo/client:5.18.2
+    build: { context: ., target: client, args: { NOPORTS_VERSION: "${NOPORTS_VERSION:-latest}" } }
+    image: noports-demo/client
     hostname: client
     volumes: [client-keys:/home/demo/.atsign/keys]
 
   scanner:
     build: { context: ., target: scanner }
-    image: noports-demo/scanner:local
+    image: noports-demo/scanner
     hostname: scanner
     networks: [net]
 

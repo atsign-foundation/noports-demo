@@ -3,8 +3,11 @@
 # Written for bash 3.2 (macOS's default) and BSD or GNU userland.
 
 cd "$(dirname "$0")" || exit 1
+# Settings come from .env; NOPORTS_VERSION set in your shell wins, as it does for Compose.
+_np_override=${NOPORTS_VERSION:-}
 # shellcheck source=/dev/null
 . ./.env
+NOPORTS_VERSION=${_np_override:-$NOPORTS_VERSION}
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
   BOLD=$'\033[1m'; DIM=$'\033[2m'; RED=$'\033[31m'; GREEN=$'\033[32m'
@@ -42,6 +45,7 @@ run_with_timeout() {
 # quietly CMD...: run CMD silently; on failure leave its last lines in $LAST_OUT.
 quietly() {
   local out; out=$("$@" 2>&1) && return 0
+  # shellcheck disable=SC2034  # read by the scripts that source this file
   LAST_OUT=$(printf '%s\n' "$out" | grep -v '^\s*$' | tail -4); return 1
 }
 
@@ -66,6 +70,14 @@ wait_for_log() {
     sleep 1; i=$((i + 1))
   done
   return 1
+}
+
+# The newest NoPorts release tag (e.g. v5.18.2), or empty if GitHub is unreachable.
+latest_noports_release() { scripts/latest-noports-release; }
+
+# The NoPorts release inside the built images, or empty if they are not built.
+built_noports_version() {
+  docker run --rm --entrypoint cat noports-demo/client /etc/noports-version 2>/dev/null
 }
 
 # Strip '@' to get the platform's internal name for an atSign.

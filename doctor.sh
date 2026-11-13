@@ -84,17 +84,16 @@ fi
 
 PLATFORM_IMAGE=$(dc config --images 2>/dev/null | grep ephemeral)
 if docker image inspect "$PLATFORM_IMAGE" >/dev/null 2>&1; then
-  ok "Platform image present (atsigncompany/ephemeral, pinned by digest)"
+  ok "Platform image present ($PLATFORM_IMAGE, created $(docker image inspect -f '{{.Created}}' "$PLATFORM_IMAGE" | cut -c1-10))"
   # The image carries a real TLS certificate for vip.ve.atsign.zone; when it
   # expires, every client refuses to connect.
   end=$(docker run --rm --entrypoint openssl "$PLATFORM_IMAGE" x509 -in /atsign/root/certs/fullchain.pem -noout -enddate 2>/dev/null | cut -d= -f2)
   if ! docker run --rm --entrypoint openssl "$PLATFORM_IMAGE" x509 -in /atsign/root/certs/fullchain.pem -noout -checkend 0 >/dev/null 2>&1; then
     fail "The platform image's TLS certificate expired on $end." \
-         "Clients will refuse to connect. Pin a newer atsigncompany/ephemeral digest in compose.yaml:" \
-         "docker buildx imagetools inspect atsigncompany/ephemeral:latest"
+         "Clients will refuse to connect. Run ./demo.sh while online: it pulls a newer image."
   elif ! docker run --rm --entrypoint openssl "$PLATFORM_IMAGE" x509 -in /atsign/root/certs/fullchain.pem -noout -checkend 1209600 >/dev/null 2>&1; then
     warn "The platform image's TLS certificate expires soon: $end."
-    why "After that date the demo stops working until compose.yaml pins a newer image digest."
+    why "After that date the demo stops working. ./demo.sh pulls a newer image whenever it is online."
   else
     ok "Platform TLS certificate valid until $end"
   fi
@@ -105,8 +104,17 @@ missing=""
 for img in $(dc config --images 2>/dev/null | grep '^noports-demo/'); do
   docker image inspect "$img" >/dev/null 2>&1 || missing="$missing $img"
 done
-if [ -n "$missing" ]; then warn "Not built yet:$missing. ./demo.sh builds them (needs Internet once)."
-else ok "Device, client, relay and scanner images built (NoPorts $(sed -n 's/^ARG NOPORTS_VERSION=//p' Dockerfile))"; fi
+if [ -n "$missing" ]; then
+  warn "Not built yet:$missing. ./demo.sh builds them (needs Internet once)."
+else
+  have=$(built_noports_version); latest=$(latest_noports_release)
+  ok "Device, client, relay and scanner images built with NoPorts $have"
+  if [ -z "$latest" ]; then
+    warn "Cannot reach GitHub to check for a newer NoPorts release (fine if you are offline)."
+  elif [ "$NOPORTS_VERSION" = latest ] && [ "$have" != "$latest" ]; then
+    warn "NoPorts $latest is out; these images have $have. ./demo.sh updates them."
+  fi
+fi
 
 # ---- 3. The platform -----------------------------------------------------------
 PLATFORM_UP=0

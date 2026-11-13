@@ -37,20 +37,34 @@ setup() {
   run_with_timeout 20 docker info >/dev/null 2>&1 || die "Docker is not answering."
   docker compose version >/dev/null 2>&1 || die "'docker compose' (Compose v2) is not available."
 
-  # 1. Images. Only the first run needs the Internet.
-  if ! docker image inspect "$(dc config --images | grep ephemeral)" >/dev/null 2>&1; then
-    say "Pulling the Atsign platform image (first run only)..."
-    dc pull platform || die "Could not pull the platform image." "Needs Internet access and Docker Hub on the first run."
+  # 1. Images. When the Internet is reachable, use the newest NoPorts release
+  #    and platform image; when it is not, use whatever is already here.
+  local latest want have img missing=0
+  latest=$(latest_noports_release)                 # empty when offline
+  want=$NOPORTS_VERSION; [ "$want" = latest ] && want=$latest
+  have=$(built_noports_version)
+  if [ -z "$latest" ]; then
+    say "GitHub is unreachable, so not checking for updates; using the images already here."
+  else
+    say "Checking for a newer platform image..."
+    quietly run_with_timeout 180 docker compose pull -q platform \
+      || warn "Could not pull atsigncompany/ephemeral:latest; using the local copy if there is one."
   fi
-  local missing=0 img
+  docker image inspect "$(dc config --images | grep ephemeral)" >/dev/null 2>&1 \
+    || die "The platform image is not here and could not be downloaded." "The first run needs Internet access to Docker Hub."
   for img in $(dc config --images | grep '^noports-demo/'); do
     docker image inspect "$img" >/dev/null 2>&1 || missing=1
   done
-  if [ "$missing" = 1 ]; then
-    say "Building the device, client, relay and scanner images (first run only, a few minutes)..."
-    dc build || die "Image build failed (see the output above)." \
-      "Needs Internet access to deb.debian.org and github.com on the first run."
+  if [ -n "$want" ] && { [ "$missing" = 1 ] || [ "$have" != "$want" ]; }; then
+    if [ -n "$have" ]; then say "Changing NoPorts $have -> $want (rebuilding images)..."
+    else say "Building the device, client, relay and scanner images with NoPorts $want (first run, 1-3 minutes)..."; fi
+    NOPORTS_VERSION=$want dc build || die "Image build failed (see the output above)." \
+      "Needs Internet access to deb.debian.org and github.com."
+    have=$want
+  elif [ "$missing" = 1 ]; then
+    die "The demo images are not built, and GitHub is unreachable to fetch NoPorts." "The first run needs Internet access."
   fi
+  say "Using NoPorts $have."
 
   # 2. The platform: an atDirectory and three atServers.
   say "Starting the platform (Atsign's cloud, locally; ~20 s from cold)..."

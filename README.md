@@ -12,6 +12,8 @@ purchased atSigns, and after the first run you need no Internet access.
 2. `git clone https://github.com/atsign-foundation/noports-demo && cd noports-demo`
 3. `./demo.sh`. The first run downloads and builds images, which takes 1–3 minutes
    and needs the Internet. Later runs take about 10 seconds and work offline.
+   When online, each run picks up a newer NoPorts release or platform image if
+   there is one.
 4. If anything fails, run `./doctor.sh`. It says what failed and why. `demo.sh` also
    runs it for you when something fails.
 5. When you are done, run `./teardown.sh`. It removes every container, the
@@ -105,29 +107,49 @@ yourself.
 | File | Purpose |
 |---|---|
 | [compose.yaml](compose.yaml) | The five boxes and the one network. Note that no service has a `ports:` section. |
-| [Dockerfile](Dockerfile) | Builds the device, client, relay and scanner images from Debian and the official NoPorts release tarball (checksum verified). |
+| [Dockerfile](Dockerfile) | Builds the device, client, relay and scanner images from Debian and the official NoPorts release tarball, checked against the release's own checksums. |
 | [device/sshd_config](device/sshd_config) | `ListenAddress 127.0.0.1` and key-only logins. |
 | [platform/atsigns](platform/atsigns) | The three atSigns that the platform creates at start-up. |
 | [.env](.env) | atSign names and the platform's domain, shared by Compose and the scripts. |
 | [demo.sh](demo.sh) | Setup, then the four acts. Every command it runs is printed before its output. |
 | [doctor.sh](doctor.sh) | Ordered checks, each with a cause and a fix. |
 | [teardown.sh](teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
+| [scripts/latest-noports-release](scripts/latest-noports-release) | Finds the newest NoPorts release tag. |
 | [scripts/in-container/](scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an atSign, open the SSH session, and list sockets. |
 
 ## Versions
 
-| Component | Pinned to |
+The demo tracks the newest NoPorts and platform releases.
+
+| Component | Version |
 |---|---|
-| NoPorts (`sshnpd`, `sshnp`, `srvd`, `at_activate`) | v5.18.2, release tarballs `sshnp-linux-x64.tgz` / `sshnp-linux-arm64.tgz`, SHA-256 checked at build |
-| Platform | `atsigncompany/ephemeral@sha256:8451e0f1d9261930ea28756ea02a20ffd9bbd8185c3a3f824db45950053b3736` (amd64 + arm64) |
+| NoPorts (`sshnpd`, `sshnp`, `srvd`, `at_activate`) | The newest NoPorts release (v5.18.2 at the time of writing), from the release tarballs `sshnp-linux-x64.tgz` / `sshnp-linux-arm64.tgz` |
+| Platform | `atsigncompany/ephemeral:latest` (amd64 + arm64) |
 | Base image | `debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` |
 | nmap | Debian trixie's package (7.95 at the time of writing) |
 
-**The demo has a built-in expiry date.** The pinned platform image contains a
-real, publicly trusted TLS certificate for `vip.ve.atsign.zone`, valid until
-**14 December 2026**. After that date every client refuses to connect. `doctor.sh`
-warns you two weeks ahead and tells you when it has expired. The fix is to pin a
-newer image digest (`docker buildx imagetools inspect atsigncompany/ephemeral:latest`).
+- **How "newest" is chosen.** GitHub's "latest release" can point to a desktop app
+  release, because the noports repo publishes those too. So
+  [scripts/latest-noports-release](scripts/latest-noports-release) picks the newest
+  release that is not a prerelease and has a plain `vX.Y.Z` tag.
+- **Updates.** Whenever GitHub is reachable, `demo.sh` rebuilds the images if a newer
+  NoPorts release exists, and pulls a newer platform image if there is one. A new
+  platform image starts blank, so the demo re-activates the atSigns automatically.
+  Offline, it uses whatever is already on your machine.
+- **Integrity, not pinning.** The build checks each tarball against the SHA-256 in
+  that release's own `checksums.txt`. This catches a corrupted or swapped download.
+  It does not make the build reproducible.
+- **To pin a version,** set `NOPORTS_VERSION=v5.18.2` in [.env](.env), or run
+  `NOPORTS_VERSION=v5.18.2 ./demo.sh`. To pin the platform, replace `:latest` in
+  [compose.yaml](compose.yaml) with a digest. `./doctor.sh` reports which NoPorts
+  version the images contain, and warns if a newer one is out.
+
+**The platform's certificate expires.** Each platform image contains a real,
+publicly trusted TLS certificate for `vip.ve.atsign.zone`. In the image current at
+the time of writing it is valid until **14 December 2026**. After a certificate
+expires, every client refuses to connect. Running `./demo.sh` online pulls a fresh
+image. `./doctor.sh` warns two weeks before the certificate in your local image
+expires.
 
 ## Notes on the platform image
 
@@ -163,4 +185,4 @@ reading it and running it:
 - Not supported: 32-bit ARM and other CPUs (no platform image). Windows has not
   been tried; the scripts need bash, so WSL 2 is the likely route.
 - After you edit the Dockerfile or `scripts/in-container/`, run `docker compose build`.
-  `demo.sh` only builds images that are missing.
+  `demo.sh` rebuilds only when images are missing or the NoPorts version changes.
