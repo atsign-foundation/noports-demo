@@ -30,7 +30,7 @@ die() {
 }
 
 # ---------------------------------------------------------------------------
-# Setup: images, platform, atSigns, daemons. Quiet unless something is wrong.
+# Setup: images, platform, Atsigns, daemons. Quiet unless something is wrong.
 # ---------------------------------------------------------------------------
 setup() {
   heading "Setting up"
@@ -70,7 +70,7 @@ setup() {
   say "Starting the platform (Atsign's cloud, locally; ~20 s from cold)..."
   quietly dc up -d --wait --wait-timeout 120 platform || die "The platform did not start and become healthy within 2 minutes." "Docker said: $LAST_OUT"
 
-  # 3. atSigns. Each box activates its own atSign and keeps its keys in its own
+  # 3. Atsigns. Each box activates its own Atsign and keeps its keys in its own
   #    Docker volume. Keys are never printed; nor is the one-time CRAM secret.
   local changed=0 reset=0 svc atsign rc errs
   errs=$(mktemp)
@@ -91,7 +91,7 @@ setup() {
     done
     [ "$need_reset" = 0 ] && { rm -f "$errs"; break; }
     [ "$reset" = 1 ] && die "Keys and platform still disagree after a platform reset."
-    # Platform has the atSigns activated but a box lost its keys (or the reverse):
+    # Platform has the Atsigns activated but a box lost its keys (or the reverse):
     # start from a fresh platform, which forgets all activations.
     say "  Keys and platform are out of step; starting a fresh platform..."
     dc rm -sf platform relay device >/dev/null 2>&1
@@ -162,7 +162,7 @@ heading "1. The boxes"
 say "Five containers on one flat Docker network. No firewall, no NAT between them."
 say ""
 printf '  %-9s %-16s %s\n' "BOX" "IP" "ROLE"
-printf '  %-9s %-16s %s\n' platform "$(ip_of platform)" "Atsign's cloud, run locally: atDirectory + one atServer per atSign. LISTENS, as the hosted one does."
+printf '  %-9s %-16s %s\n' platform "$(ip_of platform)" "The Atsign Platform, run locally: atDirectory + one atServer per Atsign. LISTENS, as the hosted one does."
 printf '  %-9s %-16s %s\n' relay    "$(ip_of relay)"    "Atsign's cloud: the socket rendezvous (srvd), $RELAY_ATSIGN. LISTENS, as the hosted ones do."
 printf '  %-9s %-16s %s\n' device   "$(ip_of device)"   "${BOLD}The machine we will log in to.${RESET} sshnpd ($DEVICE_ATSIGN) + sshd on 127.0.0.1."
 printf '  %-9s %-16s %s\n' client   "$(ip_of client)"   "Your laptop: sshnp ($CLIENT_ATSIGN) + OpenSSH."
@@ -240,4 +240,4 @@ say ""
 say "Interactive shell on the device:  ./demo.sh shell"
 say "Check everything is healthy:      ./doctor.sh"
 say "Remove containers, keys, state:   ./teardown.sh"
-say "What this does NOT prove: see README.md."
+say "What this does NOT prove: see docs/DETAILS.md."

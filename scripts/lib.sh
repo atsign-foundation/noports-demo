@@ -84,10 +84,10 @@ built_noports_version() {
   docker run --rm --entrypoint cat noports-demo/client /etc/noports-version 2>/dev/null
 }
 
-# Strip '@' to get the platform's internal name for an atSign.
+# Strip '@' to get the platform's internal name for an Atsign.
 bare() { printf '%s' "${1#@}"; }
 
-# The atServer port of each atSign: the platform gives FIRST_PORT (2500) to
+# The atServer port of each Atsign: the platform gives FIRST_PORT (2500) to
 # the first name in platform/atsigns, 2501 to the second, and so on.
 # Output: "2500=atServer~of~@x ..." (~ stands for a space).
 atserver_labels() {

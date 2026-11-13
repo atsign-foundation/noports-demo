@@ -136,7 +136,7 @@ else
   fi
 fi
 
-# ---- 4. Each box: name resolution, atSign, keys -----------------------------
+# ---- 4. Each box: name resolution, Atsign, keys -----------------------------
 check_box() {   # check_box SERVICE ATSIGN
   local svc=$1 atsign=$2 resolved pip out rc
   if ! running "$svc"; then
@@ -172,7 +172,7 @@ check_box() {   # check_box SERVICE ATSIGN
          fail "$svc box: $atsign is not activated on the platform, but this box has keys for it." \
               "The platform was recreated after the keys were made (it starts blank). Run ./demo.sh: it re-activates."
        else
-         fail "$svc box: $atsign exists but has not been activated." "Run ./demo.sh: it activates the atSigns."
+         fail "$svc box: $atsign exists but has not been activated." "Run ./demo.sh: it activates the Atsigns."
        fi; return 1 ;;
     2) fail "$svc box: the atDirectory knows $atsign, but its atServer is unreachable." \
             "The atServer process inside the platform has stopped. Platform processes:"

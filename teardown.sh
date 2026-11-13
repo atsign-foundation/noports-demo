@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Removes everything the demo created: all five containers, the network, and
-# the Docker volumes holding each box's atSign keys. The platform keeps its
+# the Docker volumes holding each box's Atsign keys. The platform keeps its
 # state inside its container, so that goes too. Nothing is left on your disk.
 #
 #   ./teardown.sh            keep the images (next ./demo.sh works offline)

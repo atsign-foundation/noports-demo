@@ -1,6 +1,6 @@
 #!/bin/sh
 # Usage: CRAM=<secret> ensure-activated @atsign
-# Makes sure this box holds working keys for its atSign on the demo platform.
+# Makes sure this box holds working keys for its Atsign on the demo platform.
 # Exit codes: 0 keys already fine | 10 activated just now |
 #             20 platform says activated but this box has no keys |
 #             30 activation failed | other: at_activate status code (see doctor.sh)
@@ -13,7 +13,7 @@ st=$?
 case $st in
   0) [ -s "$keys" ] || exit 20
      # Keys exist; prove they still authenticate (they won't if the platform
-     # was recreated and someone activated the atSign again).
+     # was recreated and someone activated the Atsign again).
      timeout 60 at_activate list -a "$a" -r "$ROOT_SERVER" -k "$keys" >"$log" 2>&1 || exit 20
      exit 0 ;;
   1) rm -f "$keys"     # keys from an earlier, now-gone platform
