@@ -25,7 +25,7 @@ x-noports: &noports
 services:
   platform:
     # Atsign's ephemeral environment: an atDirectory and one atServer per
-    # atSign listed in platform/atsigns. Stands in for Atsign's cloud.
+    # Atsign listed in platform/atsigns. Stands in for the hosted Atsign Platform.
     # demo.sh pulls a newer :latest whenever the Internet is reachable.
     image: atsigncompany/ephemeral:latest
     hostname: platform
@@ -40,7 +40,7 @@ services:
         # atServer's address. This alias makes that name mean this container.
         aliases: [vip.ve.atsign.zone]
     healthcheck:
-      # Ready once the atDirectory knows all three atSigns (it loads them ~15s
+      # Ready once the atDirectory knows all three Atsigns (it loads them ~15s
       # after start).
       test: ["CMD-SHELL", "[ \"$(redis-cli -a foobared --no-auth-warning exists demo_client demo_device demo_relay)\" = 3 ]"]
       interval: 2s
@@ -80,7 +80,7 @@ networks:
   net:
 
 volumes:
-  # Each box's atSign keys, in its own Docker volume. Removed by teardown.
+  # Each box's Atsign keys, in its own Docker volume. Removed by teardown.
   client-keys:
   device-keys:
   relay-keys:

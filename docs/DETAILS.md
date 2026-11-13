@@ -4,7 +4,7 @@ This demo logs you in over SSH to a machine, then port-scans all 65,535 TCP
 ports of that same machine while you are logged in. The scan finds nothing
 open. The "machine" is a Docker container standing in for a real one, and
 everything runs on your computer in Docker. You need no accounts and no
-purchased atSigns, and after the first run you need no Internet access.
+purchased Atsigns, and after the first run you need no Internet access.
 
 For a visual walkthrough of how it all fits together, with a diagram for each
 part, see the slide deck
@@ -50,7 +50,7 @@ yourself.
 
 | Box | What it is | Listens? |
 |---|---|---|
-| **platform** | `atsigncompany/ephemeral`: an atDirectory plus one atServer per atSign (`@demo_client`, `@demo_device`, `@demo_relay`). It stands in for Atsign's hosted service. | Yes, as the hosted one does |
+| **platform** | `atsigncompany/ephemeral`: an atDirectory plus one atServer per Atsign (`@demo_client`, `@demo_device`, `@demo_relay`). It stands in for the hosted Atsign Platform. | Yes, as the hosted one does |
 | **relay** | `srvd`, the socket rendezvous, signed in as `@demo_relay`. It stands in for Atsign's hosted relays. | Yes, one pair of ports per session |
 | **device** | The machine you log in to. `sshnpd` runs as `@demo_device`, and `sshd` is bound to `127.0.0.1`. | **Nothing reachable from the network** |
 | **client** | Your laptop: `sshnp` as `@demo_client`, plus OpenSSH. | No |
@@ -88,14 +88,14 @@ yourself.
   Docker bridge. In real use the device sits behind NAT or a firewall and dials
   out across the Internet to Atsign's hosted atServers and relays. This demo does
   not exercise that path, and it does not measure latency or reliability.
-- **Nothing about production key handling.** The atSigns are throwaway and the
+- **Nothing about production key handling.** The Atsigns are throwaway and the
   platform is a local test image. The keys here are unencrypted files in Docker
   volumes, created by one-time activation secrets that the platform image prints
   to its own logs. Its Redis has a well-known password, and its admin UI on 9001
   has none. Enrollment, key storage, rotation and revocation in a real deployment
   are not shown.
 - **NoPorts does not fix the device itself.** Software on the device can still have
-  vulnerabilities. Anyone with an authorized client atSign and SSH key gets in.
+  vulnerabilities. Anyone with an authorized client Atsign and SSH key gets in.
   "No listening ports" is not "no attack surface": `sshnpd` still processes
   messages that arrive over the connections it opens, and the device trusts the
   atServers and relay it dials.
@@ -114,13 +114,13 @@ yourself.
 | [compose.yaml](../compose.yaml) | The five boxes and the one network. Note that no service has a `ports:` section. |
 | [Dockerfile](../Dockerfile) | Builds the device, client, relay and scanner images from Debian and the official NoPorts release tarball, checked against the release's own checksums. |
 | [device/sshd_config](../device/sshd_config) | `ListenAddress 127.0.0.1` and key-only logins. |
-| [platform/atsigns](../platform/atsigns) | The three atSigns that the platform creates at start-up. |
-| [.env](../.env) | atSign names and the platform's domain, shared by Compose and the scripts. |
+| [platform/atsigns](../platform/atsigns) | The three Atsigns that the platform creates at start-up. |
+| [.env](../.env) | Atsign names and the platform's domain, shared by Compose and the scripts. |
 | [demo.sh](../demo.sh) | Setup, then the four acts. Every command it runs is printed before its output. |
 | [doctor.sh](../doctor.sh) | Ordered checks, each with a cause and a fix. |
 | [teardown.sh](../teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
 | [docs/noports-demo-explained.pptx](noports-demo-explained.pptx) | Slide deck explaining the demo, with diagrams. |
-| [scripts/in-container/](../scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an atSign, open the SSH session, and list sockets. |
+| [scripts/in-container/](../scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an Atsign, open the SSH session, and list sockets. |
 
 ## Versions
 
@@ -137,7 +137,7 @@ The demo tracks the newest NoPorts and platform releases.
   GitHub "latest release" link points to.
 - **Updates.** Whenever GitHub is reachable, `demo.sh` rebuilds the images if a newer
   NoPorts release exists, and pulls a newer platform image if there is one. A new
-  platform image starts blank, so the demo re-activates the atSigns automatically.
+  platform image starts blank, so the demo re-activates the Atsigns automatically.
   Offline, it uses whatever is already on your machine.
 - **Integrity, not pinning.** The build checks each tarball against the SHA-256 in
   that release's own `checksums.txt`. This catches a corrupted or swapped download.
@@ -164,7 +164,7 @@ reading it and running it:
   `FIRST_PORT+1`, and so on. It also creates a random one-time activation (CRAM)
   secret, written to `/atsign/atservers/<name>/CRAM` and **printed to the
   container log**. The demo mounts its own three-name list instead, and activates
-  each atSign with `at_activate onboard --cramkey`, run on the box that owns it.
+  each Atsign with `at_activate onboard --cramkey`, run on the box that owns it.
 - The atDirectory listens on 64, and on 443 for HTTPS. It answers each name with
   `vip.ve.atsign.zone:<port>`. It loads these records about 15 seconds after start.
   The compose health check waits for them.
@@ -175,7 +175,7 @@ reading it and running it:
 - Port 9001 is supervisord's web UI, without authentication. Port 6379 is the
   atDirectory's Redis.
 - It does **not** include a socket rendezvous, so `srvd` runs in its own box with
-  its own atSign from the same platform.
+  its own Atsign from the same platform.
 - atServer data lives inside the container, so removing the container resets the
   platform. `demo.sh` notices when keys and platform are out of step and starts
   again cleanly.
