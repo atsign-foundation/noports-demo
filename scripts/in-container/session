@@ -1,0 +1,44 @@
+#!/bin/bash
+# Usage: session open | run "<command>" | shell | close
+# An SSH session from this client to the device, carried by NoPorts.
+# sshnp sets up the tunnel and prints the ssh command it would run (-x);
+# we then run OpenSSH ourselves so the session can stay open while we scan.
+set -u
+ctl=/tmp/demo-ssh.ctl
+SSH_OPTS=(-i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o BatchMode=yes
+  -o ControlPath="$ctl" -o ServerAliveInterval=5
+  # Verify the device's real host key (passed in by demo.sh), under the name "device".
+  -o HostKeyAlias=device -o UserKnownHostsFile="$HOME/.ssh/known_hosts_device"
+  -o StrictHostKeyChecking=yes)
+
+case "${1:-}" in
+open)
+  [ -f ~/.ssh/id_ed25519 ] || ssh-keygen -q -t ed25519 -N "" -f ~/.ssh/id_ed25519
+  echo "device ${DEVICE_HOST_KEY:?}" > ~/.ssh/known_hosts_device
+  ssh "${SSH_OPTS[@]}" -O exit demo@localhost >/dev/null 2>&1   # close any old session
+  port=""
+  for attempt in 1 2 3; do
+    out=$(timeout 60 sshnp --from "$CLIENT_ATSIGN" --to "$DEVICE_ATSIGN" \
+            --device "$DEVICE_NAME" --srvd "$RELAY_ATSIGN" --root-server "$ROOT_SERVER" \
+            --identity-file ~/.ssh/id_ed25519 --send-ssh-public-key \
+            --remote-user-name demo --output-execution-command 2>&1)
+    port=$(printf '%s\n' "$out" | sed -n 's/^ssh -p \([0-9]*\) .*/\1/p')
+    [ -n "$port" ] && break
+    echo "  sshnp attempt $attempt failed:" >&2
+    printf '%s\n' "$out" | grep -vE '^\s*$' | tail -3 | sed 's/^/    /' >&2
+    sleep 3
+  done
+  [ -n "$port" ] || exit 1
+  printf '%s\n' "$out" | grep -E 'Sending session request|Received response from the device|Fetching host and port from srvd|Received host and port|socket rendezvous' \
+    | sed 's/^[0-9: .-]*: /  sshnp: /'
+  echo "  sshnp: tunnel ready on 127.0.0.1:$port (inside the client container)"
+  timeout 30 ssh "${SSH_OPTS[@]}" -p "$port" -o ControlMaster=yes -o ControlPersist=600 \
+      -fN demo@localhost || exit 2 ;;
+run)
+  ssh "${SSH_OPTS[@]}" demo@localhost "$2" ;;
+shell)
+  ssh "${SSH_OPTS[@]}" -o BatchMode=no -t demo@localhost ;;
+close)
+  ssh "${SSH_OPTS[@]}" -O exit demo@localhost 2>/dev/null ;;
+*) echo "usage: session open | run CMD | shell | close" >&2; exit 64 ;;
+esac

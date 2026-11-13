@@ -1,0 +1,8 @@
+#!/bin/sh
+# Usage: wait-for-keys @atsign
+# Waits until this container's atKeys file exists (demo.sh creates it).
+f="$HOME/.atsign/keys/${1}_key.atKeys"
+while [ ! -s "$f" ]; do
+  echo "Waiting for $f (created when ./demo.sh activates $1)..."
+  sleep 3
+done

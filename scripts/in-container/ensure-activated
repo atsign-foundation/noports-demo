@@ -1,0 +1,25 @@
+#!/bin/sh
+# Usage: CRAM=<secret> ensure-activated @atsign
+# Makes sure this box holds working keys for its atSign on the demo platform.
+# Exit codes: 0 keys already fine | 10 activated just now |
+#             20 platform says activated but this box has no keys |
+#             30 activation failed | other: at_activate status code (see doctor.sh)
+a="$1"
+keys="$HOME/.atsign/keys/${a}_key.atKeys"
+log=/tmp/at_activate.log
+
+timeout 60 at_activate status -a "$a" -r "$ROOT_SERVER" >"$log" 2>&1
+st=$?
+case $st in
+  0) [ -s "$keys" ] || exit 20
+     # Keys exist; prove they still authenticate (they won't if the platform
+     # was recreated and someone activated the atSign again).
+     timeout 60 at_activate list -a "$a" -r "$ROOT_SERVER" -k "$keys" >"$log" 2>&1 || exit 20
+     exit 0 ;;
+  1) rm -f "$keys"     # keys from an earlier, now-gone platform
+     if timeout 120 at_activate onboard -a "$a" -r "$ROOT_SERVER" -c "$CRAM" -y -k "$keys" >"$log" 2>&1
+     then exit 10
+     else grep -iE 'error|exception|refus' "$log" | tail -3 >&2; exit 30
+     fi ;;
+  *) grep '^returning' "$log" >&2; exit "$st" ;;
+esac

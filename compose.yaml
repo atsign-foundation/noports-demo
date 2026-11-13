@@ -1,0 +1,86 @@
+name: noports-demo
+
+# One flat network, no firewall, no NAT. Every container can reach every port
+# of every other container. That is deliberate: the scanner gets a better view
+# of the device than any attacker on the Internet would.
+#
+#   "Atsign cloud" side            your side               attacker
+#   -------------------            ---------               --------
+#   platform (atDirectory +        device (sshnpd,         scanner (nmap)
+#     atServers; LISTENS)            sshd on 127.0.0.1;
+#   relay (srvd; LISTENS)            listens on NOTHING
+#                                    reachable)
+#                                  client (sshnp)
+#
+# No service publishes a port to your host.
+
+x-noports: &noports
+  env_file: .env
+  init: true          # a tiny init as PID 1, to reap child processes
+  networks: [net]
+  depends_on:
+    platform:
+      condition: service_healthy
+
+services:
+  platform:
+    # Atsign's ephemeral environment: an atDirectory and one atServer per
+    # atSign listed in platform/atsigns. Stands in for Atsign's cloud.
+    # demo.sh pulls a newer :latest whenever the Internet is reachable.
+    image: atsigncompany/ephemeral:latest
+    hostname: platform
+    environment:
+      FIRST_PORT: 2500
+      DNS_FQDN: vip.ve.atsign.zone
+    volumes:
+      - ./platform/atsigns:/tmp/setup/atsigns:ro
+    networks:
+      net:
+        # The atDirectory hands out "vip.ve.atsign.zone:25xx" as each
+        # atServer's address. This alias makes that name mean this container.
+        aliases: [vip.ve.atsign.zone]
+    healthcheck:
+      # Ready once the atDirectory knows all three atSigns (it loads them ~15s
+      # after start).
+      test: ["CMD-SHELL", "[ \"$(redis-cli -a foobared --no-auth-warning exists demo_client demo_device demo_relay)\" = 3 ]"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
+
+  relay:
+    <<: *noports
+    build: { context: ., target: relay, args: { NOPORTS_VERSION: "${NOPORTS_VERSION:-latest}" } }
+    image: noports-demo/relay
+    hostname: relay
+    volumes: [relay-keys:/home/demo/.atsign/keys]
+
+  device:
+    <<: *noports
+    build: { context: ., target: device, args: { NOPORTS_VERSION: "${NOPORTS_VERSION:-latest}" } }
+    image: noports-demo/device
+    hostname: device
+    volumes: [device-keys:/home/demo/.atsign/keys]
+    # Note: no "ports:" section. Nothing is published, and sshd binds 127.0.0.1.
+
+  client:
+    <<: *noports
+    build: { context: ., target: client, args: { NOPORTS_VERSION: "${NOPORTS_VERSION:-latest}" } }
+    image: noports-demo/client
+    hostname: client
+    volumes: [client-keys:/home/demo/.atsign/keys]
+
+  scanner:
+    build: { context: ., target: scanner }
+    image: noports-demo/scanner
+    hostname: scanner
+    networks: [net]
+
+networks:
+  net:
+
+volumes:
+  # Each box's atSign keys, in its own Docker volume. Removed by teardown.
+  client-keys:
+  device-keys:
+  relay-keys:

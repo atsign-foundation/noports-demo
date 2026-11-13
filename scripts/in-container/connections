@@ -1,0 +1,13 @@
+#!/bin/sh
+# Lists this container's established TCP connections, naming the other end.
+# Usage: connections "<ip>=<name> ..." "<port>=<label> ..."   (~ in a label = space)
+names="$1"; labels="$2"
+ss -Htn state established | awk -v names="$names" -v labels="$labels" '
+  BEGIN { n = split(names, a, " "); for (i = 1; i <= n; i++) { split(a[i], kv, "="); name[kv[1]] = kv[2] }
+          n = split(labels, b, " "); for (i = 1; i <= n; i++) { split(b[i], kv, "="); gsub(/~/, " ", kv[2]); label[kv[1]] = kv[2] } }
+  { l = $3; p = $4; pip = p; sub(/:[^:]*$/, "", pip); pport = p; sub(/.*:/, "", pport)
+    if (l ~ /^127\./ && pport == "22") { printf "  %-21s -> %-21s %s\n", l, p, "NoPorts handing the session to sshd, inside the device"; next }
+    if (l ~ /^127\./) next
+    who = (pip in name) ? name[pip] ":" pport : p
+    what = (pip in name && name[pip] == "platform") ? label[pport] : (pip in name && name[pip] == "relay") ? "relay: the session port it allotted" : ""
+    printf "  %-21s -> %-21s %s\n", l, who, what }'
