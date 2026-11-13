@@ -1,0 +1,5 @@
+# The demo keeps all keys inside Docker volumes, never in this directory.
+# These patterns are a safety net in case you copy any out.
+*.atKeys
+*_key.atKeys
+id_ed25519*

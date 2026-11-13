@@ -1,0 +1,8 @@
+# The device's SSH server. It listens on loopback only: nothing outside this
+# container can reach it. NoPorts' daemon connects to it locally.
+ListenAddress 127.0.0.1
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+AuthorizedKeysFile .ssh/authorized_keys
+PidFile /run/sshd.pid

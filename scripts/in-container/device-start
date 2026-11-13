@@ -1,0 +1,14 @@
+#!/bin/sh
+# The device: an SSH server on 127.0.0.1 and the NoPorts daemon (sshnpd).
+# sshnpd only ever makes outbound connections (to the platform and the relay).
+set -eu
+as_demo() { setpriv --reuid demo --regid demo --init-groups env HOME=/home/demo "$@"; }
+as_demo wait-for-keys "$DEVICE_ATSIGN"
+ssh-keygen -A -q            # fresh SSH host keys for this container
+mkdir -p /run/sshd
+/usr/sbin/sshd -E /var/log/sshd.log   # daemonises; config in /etc/ssh/sshd_config
+# sshnpd runs as the unprivileged user "demo"; logins arrive as that user.
+exec setpriv --reuid demo --regid demo --init-groups env HOME=/home/demo \
+  sshnpd --atsign "$DEVICE_ATSIGN" --managers "$CLIENT_ATSIGN" \
+         --device "$DEVICE_NAME" --root-server "$ROOT_SERVER" \
+         --sshpublickey --verbose

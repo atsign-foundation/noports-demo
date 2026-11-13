@@ -1,0 +1,6 @@
+#!/bin/sh
+# The socket rendezvous (srvd). It stands in for Atsign's hosted relays.
+# "-i relay" is the address it tells clients and devices to dial.
+set -eu
+wait-for-keys "$RELAY_ATSIGN"
+exec srvd --atsign "$RELAY_ATSIGN" --ip relay --root-server "$ROOT_SERVER" --verbose

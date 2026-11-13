@@ -1,78 +1,166 @@
-<!-- pyml disable-num-lines 4 md013,md033-->
-<h1><a href="https://atsign.com#gh-light-mode-only">
-   <img width=250px src="https://atsign.com/wp-content/uploads/2022/05/atsign-logo-horizontal-color2022.svg#gh-light-mode-only" alt="The Atsign Foundation"></a>
-<a href="https://atsign.com#gh-dark-mode-only">
-   <img width=250px src="https://atsign.com/wp-content/uploads/2023/08/atsign-logo-horizontal-reverse2022-Color.svg#gh-dark-mode-only" alt="The Atsign Foundation"></a></h1>
+# NoPorts demo: SSH into a machine with no open ports
 
-# Sample README
+This demo logs you in over SSH to a machine, then port-scans all 65,535 TCP
+ports of that same machine while you are logged in. The scan finds nothing
+open. Everything runs on your computer in Docker. You need no accounts and no
+purchased atSigns, and after the first run you need no Internet access.
 
-Open with intent - we welcome contributions - we want pull requests and to
-hear about issues.
+## Quick start
 
-## Who is this for?
+1. Install Docker: Docker Desktop on macOS, or Docker Engine with the Compose
+   plugin (v2.20 or newer) on Linux. Your CPU must be x86-64 or arm64.
+2. `git clone https://github.com/atsign-foundation/noports-demo && cd noports-demo`
+3. `./demo.sh`. The first run downloads and builds images, which takes 1–3 minutes
+   and needs the Internet. Later runs take about 10 seconds and work offline.
+4. If anything fails, run `./doctor.sh`. It says what failed and why. `demo.sh` also
+   runs it for you when something fails.
+5. When you are done, run `./teardown.sh`. It removes every container, the
+   network, and all keys and state.
 
-The README should be addressed to somebody who's never seen this before.
-But also don't assume that they're a novice.
+`./demo.sh --step` pauses between acts. `./demo.sh shell` gives you an
+interactive shell on the device over NoPorts, so you can run `ss -tuln` there
+yourself.
 
-### Code user
+## Which box is which
 
-Does this repo publish to [pub.dev](https://pub.dev) or similar?
-In which case the code user just needs a pointer there - e.g. [at_client on pub.dev](https://pub.dev/packages/at_client)
+```
+   "Atsign's cloud" (local)          your side                      attacker
+  +-------------------------+       +--------------------------+   +---------+
+  | platform     LISTENS    | <---- | device                   |   | scanner |
+  |  atDirectory, atServers |       |  sshnpd    (dials out)   |<--|  nmap   |
+  +-------------------------+       |  sshd on 127.0.0.1 only  |   +---------+
+  | relay        LISTENS    | <---- |                          |   scans all
+  |  srvd                   |       +--------------------------+   65535 TCP
+  +-------------------------+                                       ports
+              ^      ^
+              |      +------------- client: sshnp + OpenSSH (dials out)
+              +-------------------- (both sides dial the relay; it joins them)
 
-### Contributor
+  All five boxes share one flat Docker network: no firewall, no NAT.
+  Arrows point from the side that opens the connection.
+  No box publishes a port to your computer.
+```
 
-This is the person who we want working with us here.
-[CONTRIBUTING.md](CONTRIBUTING.md) is going to have the detailed guidance
-on how to setup their tools, tests and how to make a pull request.
+| Box | What it is | Listens? |
+|---|---|---|
+| **platform** | `atsigncompany/ephemeral`: an atDirectory plus one atServer per atSign (`@demo_client`, `@demo_device`, `@demo_relay`). It stands in for Atsign's hosted service. | Yes, as the hosted one does |
+| **relay** | `srvd`, the socket rendezvous, signed in as `@demo_relay`. It stands in for Atsign's hosted relays. | Yes, one pair of ports per session |
+| **device** | The machine you log in to. `sshnpd` runs as `@demo_device`, and `sshd` is bound to `127.0.0.1`. | **Nothing reachable from the network** |
+| **client** | Your laptop: `sshnp` as `@demo_client`, plus OpenSSH. | No |
+| **scanner** | nmap, on the same network as the device. | No |
 
-## Why, What, How?
+## What you just saw
 
-### Why?
+1. **Before connecting**, the demo lists every listening socket inside the
+   device. Only loopback addresses appear: `sshd` on `127.0.0.1:22`, and Docker's
+   own DNS resolver on `127.0.0.11`, which every container has. It also confirms
+   that Docker publishes no ports for the device. Then the scanner sweeps all
+   65,535 TCP ports of the device. Every port is closed (TCP reset): the device is
+   reachable, it simply has nothing to connect to. For contrast, the same scan of
+   the platform finds its open ports, which shows the scanner works.
+2. **Connecting.** `sshnp` on the client sends an encrypted session request to the
+   device through the atServers on the platform. The relay assigns a pair of ports.
+   The device's daemon and the client each **dial out** to the relay, and the relay
+   joins the two connections. The client's OpenSSH logs in through that tunnel,
+   verifying the device's real SSH host key, and runs commands. The device's
+   `sshd` logs the login as coming from `127.0.0.1`, because the NoPorts daemon
+   handed it over locally.
+3. **While connected**, the scan runs again and finds nothing. The device's
+   listening sockets have not changed. Its connection table shows only outbound
+   connections, to atServers on the platform and to the relay. Since nothing on
+   the device listens on the network, the device must have opened every one of
+   those connections itself.
+4. The relay is listening during the session, one port for each side. It passes
+   bytes it cannot read: SSH is encrypted end to end, and NoPorts adds a second
+   layer with a session key that goes from device to client encrypted for the
+   client, so the relay and the atServers never see it.
 
-What is the purpose of this project?
+## What this does not prove
 
-### What?
+- **No real NAT or firewall traversal.** Everything runs on one host, on one
+  Docker bridge. In real use the device sits behind NAT or a firewall and dials
+  out across the Internet to Atsign's hosted atServers and relays. This demo does
+  not exercise that path, and it does not measure latency or reliability.
+- **Nothing about production key handling.** The atSigns are throwaway and the
+  platform is a local test image. The keys here are unencrypted files in Docker
+  volumes, created by one-time activation secrets that the platform image prints
+  to its own logs. Its Redis has a well-known password, and its admin UI on 9001
+  has none. Enrollment, key storage, rotation and revocation in a real deployment
+  are not shown.
+- **NoPorts does not fix the device itself.** Software on the device can still have
+  vulnerabilities. Anyone with an authorized client atSign and SSH key gets in.
+  "No listening ports" is not "no attack surface": `sshnpd` still processes
+  messages that arrive over the connections it opens, and the device trusts the
+  atServers and relay it dials.
+- **The demo scans TCP over IPv4 only.** It does not run a UDP scan (UDP scans
+  through a bridge are slow and inconclusive). Instead it lists the device's UDP
+  sockets from the inside: only Docker's resolver on loopback. The Docker network
+  has no IPv6.
+- **"The relay cannot read it" is stated, not shown.** The demo does not capture
+  packets. The claim comes from the NoPorts design documentation (see *How it
+  works* in the NoPorts docs).
 
-What is needed to get the project and its dependencies installed?
+## Read the whole thing in five minutes
 
-### How?
+| File | Purpose |
+|---|---|
+| [compose.yaml](compose.yaml) | The five boxes and the one network. Note that no service has a `ports:` section. |
+| [Dockerfile](Dockerfile) | Builds the device, client, relay and scanner images from Debian and the official NoPorts release tarball (checksum verified). |
+| [device/sshd_config](device/sshd_config) | `ListenAddress 127.0.0.1` and key-only logins. |
+| [platform/atsigns](platform/atsigns) | The three atSigns that the platform creates at start-up. |
+| [.env](.env) | atSign names and the platform's domain, shared by Compose and the scripts. |
+| [demo.sh](demo.sh) | Setup, then the four acts. Every command it runs is printed before its output. |
+| [doctor.sh](doctor.sh) | Ordered checks, each with a cause and a fix. |
+| [teardown.sh](teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
+| [scripts/in-container/](scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an atSign, open the SSH session, and list sockets. |
 
-How does this work? How is this used to fulfil its intended purpose?
+## Versions
 
-## Checklist
+| Component | Pinned to |
+|---|---|
+| NoPorts (`sshnpd`, `sshnp`, `srvd`, `at_activate`) | v5.18.2, release tarballs `sshnp-linux-x64.tgz` / `sshnp-linux-arm64.tgz`, SHA-256 checked at build |
+| Platform | `atsigncompany/ephemeral@sha256:8451e0f1d9261930ea28756ea02a20ffd9bbd8185c3a3f824db45950053b3736` (amd64 + arm64) |
+| Base image | `debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` |
+| nmap | Debian trixie's package (7.95 at the time of writing) |
 
-### Writing
+**The demo has a built-in expiry date.** The pinned platform image contains a
+real, publicly trusted TLS certificate for `vip.ve.atsign.zone`, valid until
+**14 December 2026**. After that date every client refuses to connect. `doctor.sh`
+warns you two weeks ahead and tells you when it has expired. The fix is to pin a
+newer image digest (`docker buildx imagetools inspect atsigncompany/ephemeral:latest`).
 
-Does the writing flow, with proper grammar and correct spelling?
+## Notes on the platform image
 
-### Links
+`atsigncompany/ephemeral` has no published documentation. This is what we found by
+reading it and running it:
 
-Are the links to external resources correct?
-Are the links to other parts of the project correct
-(beware stuff carried over from previous repos where the
-project might have lived during earlier development)?
+- At start-up it reads a list of names from `/tmp/setup/atsigns` (26 by default,
+  `alpha` to `zulu`), and for each one creates an atServer on port `FIRST_PORT`,
+  `FIRST_PORT+1`, and so on. It also creates a random one-time activation (CRAM)
+  secret, written to `/atsign/atservers/<name>/CRAM` and **printed to the
+  container log**. The demo mounts its own three-name list instead, and activates
+  each atSign with `at_activate onboard --cramkey`, run on the box that owns it.
+- The atDirectory listens on 64, and on 443 for HTTPS. It answers each name with
+  `vip.ve.atsign.zone:<port>`. It loads these records about 15 seconds after start.
+  The compose health check waits for them.
+- Inside the demo, `vip.ve.atsign.zone` is a Docker network alias for the platform.
+  In public DNS the name points at a private address (`10.64.64.64`), so nothing
+  outside your machine is involved. No extra CA is needed: the certificate chains
+  to Google Trust Services, and Debian's `ca-certificates` trusts that.
+- Port 9001 is supervisord's web UI, without authentication. Port 6379 is the
+  atDirectory's Redis.
+- It does **not** include a socket rendezvous, so `srvd` runs in its own box with
+  its own atSign from the same platform.
+- atServer data lives inside the container, so removing the container resets the
+  platform. `demo.sh` notices when keys and platform are out of step and starts
+  again cleanly.
 
-### Description
+## Platform support
 
-Has the Description field been filled out?
-
-### Acknowledgement/Attribution
-
-Have we correctly acknowledged the work of others (and their Trademarks etc.)
-where appropriate (per the conditions of their LICENSE?
-
-### LICENSE
-
-Which LICENSE are we using?  
-Is the LICENSE(.md) file present?  
-Does it have the correct dates, legal entities etc.?
-
-## Maintainers
-
-Who created this?  
-
-Do they have complete GitHub profiles?  
-
-How can they be contacted?  
-
-Who is going to respond to pull requests?  
+- Tested: macOS (Apple silicon) with Docker Desktop, arm64 images. The amd64 images
+  also ran the full demo on the same Mac under Docker Desktop's emulation.
+- Expected to work but untested: Linux on x86-64 or arm64, and Intel Macs.
+- Not supported: 32-bit ARM and other CPUs (no platform image). Windows has not
+  been tried; the scripts need bash, so WSL 2 is the likely route.
+- After you edit the Dockerfile or `scripts/in-container/`, run `docker compose build`.
+  `demo.sh` only builds images that are missing.

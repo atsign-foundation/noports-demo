@@ -1,0 +1,12 @@
+#!/bin/sh
+# Lists every listening TCP and UDP socket in this container, and exits
+# non-zero if any is bound to anything other than loopback (127.x or ::1).
+ss -Htuln | awk '
+  { local = $5; addr = local; sub(/:[^:]*$/, "", addr); gsub(/[][]/, "", addr); sub(/%.*/, "", addr)
+    loop = (addr ~ /^127\./ || addr == "::1")
+    if (addr == "127.0.0.11") note = "Docker'"'"'s built-in DNS resolver (in every container)"
+    else if (local ~ /:22$/)  note = "sshd"
+    else note = ""
+    printf "  %-4s %-22s %-14s %s\n", $1, local, loop ? "loopback only" : "NETWORK-FACING", note
+    if (!loop) bad = 1 }
+  END { exit bad }'
