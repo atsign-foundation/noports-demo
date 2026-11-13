@@ -20,8 +20,10 @@ You need [Docker](https://www.docker.com/get-started/). Then:
 ```
 git clone https://github.com/atsign-foundation/noports-demo
 cd noports-demo
-./demo.sh
+./demo.sh --step
 ```
+
+The demo pauses after each step; press Enter to move on.
 
 The first run takes 1–3 minutes. Nothing leaves your computer, and you need
 no accounts and no sign-up.
