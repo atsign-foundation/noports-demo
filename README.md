@@ -114,7 +114,6 @@ yourself.
 | [demo.sh](demo.sh) | Setup, then the four acts. Every command it runs is printed before its output. |
 | [doctor.sh](doctor.sh) | Ordered checks, each with a cause and a fix. |
 | [teardown.sh](teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
-| [scripts/latest-noports-release](scripts/latest-noports-release) | Finds the newest NoPorts release tag. |
 | [scripts/in-container/](scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an atSign, open the SSH session, and list sockets. |
 
 ## Versions
@@ -128,10 +127,8 @@ The demo tracks the newest NoPorts and platform releases.
 | Base image | `debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` |
 | nmap | Debian trixie's package (7.95 at the time of writing) |
 
-- **How "newest" is chosen.** GitHub's "latest release" can point to a desktop app
-  release, because the noports repo publishes those too. So
-  [scripts/latest-noports-release](scripts/latest-noports-release) picks the newest
-  release that is not a prerelease and has a plain `vX.Y.Z` tag.
+- **How "newest" is chosen.** The demo uses the release that the noports repo's
+  GitHub "latest release" link points to.
 - **Updates.** Whenever GitHub is reachable, `demo.sh` rebuilds the images if a newer
   NoPorts release exists, and pulls a newer platform image if there is one. A new
   platform image starts blank, so the demo re-activates the atSigns automatically.

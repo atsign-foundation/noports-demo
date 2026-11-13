@@ -73,7 +73,11 @@ wait_for_log() {
 }
 
 # The newest NoPorts release tag (e.g. v5.18.2), or empty if GitHub is unreachable.
-latest_noports_release() { scripts/latest-noports-release; }
+# Read from where GitHub's "latest release" link redirects to.
+latest_noports_release() {
+  curl -fsSI --max-time 8 https://github.com/atsign-foundation/noports/releases/latest 2>/dev/null \
+    | sed -n 's|^[Ll]ocation: .*/tag/\([^[:space:]]*\).*|\1|p'
+}
 
 # The NoPorts release inside the built images, or empty if they are not built.
 built_noports_version() {

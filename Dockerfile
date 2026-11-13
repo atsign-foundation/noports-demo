@@ -12,7 +12,6 @@ ARG TARGETARCH
 ARG NOPORTS_VERSION=latest
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
-COPY scripts/latest-noports-release /usr/local/bin/
 RUN set -eu; \
     case "$TARGETARCH" in \
       amd64) A=x64 ;; \
@@ -21,7 +20,9 @@ RUN set -eu; \
     esac; \
     rel=https://github.com/atsign-foundation/noports/releases; \
     v="$NOPORTS_VERSION"; \
-    if [ "$v" = latest ]; then v=$(latest-noports-release); fi; \
+    if [ "$v" = latest ]; then \
+      v=$(curl -fsSI "$rel/latest" | sed -n 's|^[Ll]ocation: .*/tag/\([^[:space:]]*\).*|\1|p'); \
+    fi; \
     [ -n "$v" ] || { echo "Could not find the latest NoPorts release on GitHub"; exit 1; }; \
     echo "NoPorts $v, linux-$A"; \
     curl -fsSL -o /np.tgz "$rel/download/$v/sshnp-linux-$A.tgz"; \
