@@ -3,8 +3,15 @@
 Remote access normally needs an open port: a door on the machine that
 attackers can find and knock on. NoPorts needs no door.
 
-This demo proves it. It logs in to a machine, then scans all 65,535 of that
-machine's ports while logged in. The scan finds nothing open.
+This demo shows it on your own computer:
+
+1. It starts a stand-in machine: a Docker container that behaves like a
+   separate computer.
+2. It logs in to that machine.
+3. While logged in, it scans all 65,535 of the machine's ports. The scan
+   finds nothing open.
+
+NoPorts is built to do the same for a real server or device.
 
 ## Try it
 
@@ -16,7 +23,7 @@ cd noports-demo
 ./demo.sh
 ```
 
-The first run takes 1–3 minutes. Everything runs on your own computer, with
+The first run takes 1–3 minutes. Nothing leaves your computer, and you need
 no accounts and no sign-up.
 
 - Something broke? Run `./doctor.sh`.

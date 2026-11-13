@@ -2,7 +2,8 @@
 
 This demo logs you in over SSH to a machine, then port-scans all 65,535 TCP
 ports of that same machine while you are logged in. The scan finds nothing
-open. Everything runs on your computer in Docker. You need no accounts and no
+open. The "machine" is a Docker container standing in for a real one, and
+everything runs on your computer in Docker. You need no accounts and no
 purchased atSigns, and after the first run you need no Internet access.
 
 For a visual walkthrough of how it all fits together, with a diagram for each
