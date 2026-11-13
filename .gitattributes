@@ -1,0 +1,7 @@
+# Check out every text file with Unix line endings, on every OS. The scripts
+# run under bash and are copied into Linux containers; Windows line endings
+# (CRLF) break them.
+* text=auto eol=lf
+
+*.png  binary
+*.pptx binary

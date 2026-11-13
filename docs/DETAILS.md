@@ -185,7 +185,39 @@ reading it and running it:
 - Tested: macOS (Apple silicon) with Docker Desktop, arm64 images. The amd64 images
   also ran the full demo on the same Mac under Docker Desktop's emulation.
 - Expected to work but untested: Linux on x86-64 or arm64, and Intel Macs.
-- Not supported: 32-bit ARM and other CPUs (no platform image). Windows has not
-  been tried; the scripts need bash, so WSL 2 is the likely route.
+- Expected to work but untested: Windows, inside WSL 2. See
+  [Running on Windows](#running-on-windows).
+- Not supported: 32-bit ARM and other CPUs (no platform image). Windows outside
+  WSL 2 (PowerShell, Command Prompt, Git Bash).
 - After you edit the Dockerfile or `scripts/in-container/`, run `docker compose build`.
   `demo.sh` rebuilds only when images are missing or the NoPorts version changes.
+
+## Running on Windows
+
+Nobody has run the demo on Windows yet. This is the route we expect to work. If
+you try it, please open an issue to say how it went.
+
+The scripts need bash, and the boxes are Linux containers, so run the demo
+inside WSL 2 (Windows Subsystem for Linux), where it should behave as it does
+on Linux.
+
+1. Install WSL 2 with a Linux distribution: in PowerShell, run `wsl --install`.
+   This installs Ubuntu by default.
+2. Install Docker Desktop. In its settings, under **Resources → WSL
+   integration**, turn on integration for your distribution.
+3. Open the Ubuntu terminal. Run every command from the quick start there,
+   starting with `git clone`.
+
+Two things to get right:
+
+- **Clone inside WSL, not under `C:\`.** Keep the repository in your WSL home
+  folder (for example `~/noports-demo`), not under `/mnt/c/`. Files under
+  `/mnt/c/` are slow to reach from Docker and can lose their executable
+  permission.
+- **Do not use a copy cloned by Git for Windows.** The scripts need Unix line
+  endings. The repository's `.gitattributes` asks Git for them on every
+  system, but cloning inside WSL avoids the question.
+
+PowerShell, Command Prompt and Git Bash are not supported. Git Bash rewrites
+the paths passed to Docker and handles interactive sessions badly, so failures
+there are hard to diagnose.
