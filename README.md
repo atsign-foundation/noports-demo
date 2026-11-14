@@ -20,10 +20,12 @@ You need [Docker](https://www.docker.com/get-started/). Then:
 ```
 git clone https://github.com/atsign-foundation/noports-demo
 cd noports-demo
-./demo.sh --step
+./demo.sh web
 ```
 
-The demo pauses after each step; press Enter to move on.
+This opens the demo in your browser. You click through it step by step,
+watch a diagram of the connection being made, and press buttons to look
+inside the machines yourself.
 
 On Windows, run these commands inside
 [WSL 2](docs/DETAILS.md#running-on-windows), not PowerShell.
@@ -34,15 +36,14 @@ no accounts and no sign-up.
 - Something broke? Run `./doctor.sh`.
 - Finished? Run `./teardown.sh` to remove everything.
 
-## Prefer a web page?
+## Prefer the terminal?
 
 ```
-./demo.sh web
+./demo.sh --step
 ```
 
-This opens the same demo in your browser. You click through it step by step,
-watch a diagram of the connection being made, and press buttons to look
-inside the machines yourself.
+This runs the same demo as text in your terminal. It pauses after each step;
+press Enter to move on.
 
 ## Nothing to install?
 
