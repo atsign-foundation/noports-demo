@@ -39,6 +39,8 @@ no accounts and no sign-up.
 ## Prefer the terminal?
 
 ```
+git clone https://github.com/atsign-foundation/noports-demo
+cd noports-demo
 ./demo.sh --step
 ```
 
