@@ -79,7 +79,15 @@ if dc config 2>/dev/null | grep -q 'published:'; then
   warn "compose.yaml publishes ports on your computer; the stock demo publishes none."
   dc config | grep -B1 -A1 'published:' | sed 's/^/        /'
 else
-  ok "The demo publishes no ports on your computer, so none need to be free"
+  ok "The demo's five boxes publish no ports on your computer"
+fi
+ui_id=$(dc --profile ui ps -q ui 2>/dev/null)
+if [ -n "$ui_id" ]; then
+  ui_ports=$(docker port "$ui_id" | tr '\n' ' ')
+  case "$ui_ports" in
+    *0.0.0.0*|*'[::]'*) warn "The web page's box is reachable from other computers: $ui_ports" ;;
+    *) ok "The web page (./demo.sh web) is served by its own box, on this computer only: $ui_ports" ;;
+  esac
 fi
 
 PLATFORM_IMAGE=$(dc config --images 2>/dev/null | grep ephemeral)

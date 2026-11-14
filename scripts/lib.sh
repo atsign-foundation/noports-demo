@@ -19,15 +19,26 @@ fi
 dc() { docker compose "$@"; }
 
 # Narration and status lines.
-say()     { printf '%s\n' "$@"; }
-heading() { printf '\n%s== %s ==%s\n' "$BOLD$CYAN" "$1" "$RESET"; }
-cmd()     { printf '%s$ %s%s\n' "$DIM" "$*" "$RESET"; }          # show a command before running it
+# With DEMO_EVENTS=1 (set by the web page's server, ui/server.py) each of these
+# prints one tagged line instead: a record separator, a kind, a tab, the text.
+# The server turns those into the page. Lines without a tag are command output.
+if [ -n "${DEMO_EVENTS:-}" ]; then
+  ev()      { printf '\036%s\t%s\n' "$1" "$2"; }
+  say()     { local l; for l in "$@"; do ev say "$l"; done; }
+  heading() { ev heading "$1"; }
+  cmd()     { ev cmd "$*"; }
+  big()     { ev big "$1"; }
+else
+  say()     { printf '%s\n' "$@"; }
+  heading() { printf '\n%s== %s ==%s\n' "$BOLD$CYAN" "$1" "$RESET"; }
+  cmd()     { printf '%s$ %s%s\n' "$DIM" "$*" "$RESET"; }          # show a command before running it
+  big()     { printf '\n  %s>>> %s <<<%s\n\n' "$BOLD$GREEN" "$1" "$RESET"; }
+fi
 ok()      { printf '  %sPASS%s  %s\n' "$GREEN" "$RESET" "$1"; }
 bad()     { printf '  %sFAIL%s  %s\n' "$RED" "$RESET" "$1"; }
 warn()    { printf '  %sWARN%s  %s\n' "$YELLOW" "$RESET" "$1"; }
 skip()    { printf '  %sSKIP%s  %s\n' "$DIM" "$RESET" "$1"; }
 why()     { printf '        %s\n' "$@"; }                         # indented detail under PASS/FAIL
-big()     { printf '\n  %s>>> %s <<<%s\n\n' "$BOLD$GREEN" "$1" "$RESET"; }
 
 # run_with_timeout SECONDS command... (macOS has no timeout(1))
 run_with_timeout() {
@@ -82,6 +93,16 @@ latest_noports_release() {
 # The NoPorts release inside the built images, or empty if they are not built.
 built_noports_version() {
   docker run --rm --entrypoint cat noports-demo/client /etc/noports-version 2>/dev/null
+}
+
+# True when scripts/in-container/ differs from the copy inside the built images
+# (for example after a "git pull"), so the images need rebuilding.
+scripts_changed() {
+  # shellcheck disable=SC2012  # plain file names, chosen by this repository
+  local names; names=$(cd scripts/in-container && ls | tr '\n' ' ')
+  # shellcheck disable=SC2086  # $names is a list of file names
+  [ "$(cd scripts/in-container && cat $names | cksum)" != \
+    "$(docker run --rm --entrypoint sh -w /usr/local/bin noports-demo/client -c "cat $names" 2>/dev/null | cksum)" ]
 }
 
 # Strip '@' to get the platform's internal name for an Atsign.

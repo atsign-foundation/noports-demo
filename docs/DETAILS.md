@@ -24,7 +24,9 @@ part, see the slide deck
 5. When you are done, run `./teardown.sh`. It removes every container, the
    network, and all keys and state.
 
-`./demo.sh --step` pauses between acts. `./demo.sh shell` gives you an
+`./demo.sh --step` pauses between acts, and at each pause tells you how to look
+inside the boxes yourself. `./demo.sh web` runs the same demo as
+[a web page](#the-web-page). `./demo.sh shell` gives you an
 interactive shell on the device over NoPorts, so you can run `ss -tuln` there
 yourself.
 
@@ -45,8 +47,11 @@ yourself.
 
   All five boxes share one flat Docker network: no firewall, no NAT.
   Arrows point from the side that opens the connection.
-  No box publishes a port to your computer.
+  None of the five publishes a port to your computer.
 ```
+
+`./demo.sh web` adds a sixth box, `ui`, which serves the web page. It is on a
+network of its own and is described under [The web page](#the-web-page).
 
 | Box | What it is | Listens? |
 |---|---|---|
@@ -82,6 +87,63 @@ yourself.
    layer with a session key that goes from device to client encrypted for the
    client, so the relay and the atServers never see it.
 
+## The web page
+
+`./demo.sh web` runs the same demo as a page in your browser, at
+`http://localhost:8080`. Set `DEMO_UI_PORT` to use another port. The page has
+three parts:
+
+- **The story.** The same four acts, with the explanation as text and the
+  commands and their real output in terminal blocks. A **Next step** button
+  replaces Enter.
+- **Look for yourself.** At each stop, buttons run a real command inside a box
+  and show what it printed. You can also type your own command.
+- **The device, right now.** The device's listening sockets and connections,
+  refreshed every two seconds, and a diagram of the session being set up.
+
+It is not a second copy of the demo. A small server
+([ui/server.py](../ui/server.py)) runs `demo.sh` and shows what it prints, so
+the terminal and the page cannot drift apart.
+
+**The diagram is drawn from logs.** Setting up a session takes nine steps and
+about half a second. After you connect, the server reads what `sshnp`, `sshnpd`
+and `srvd` logged, finds the line each step left behind, and the page replays
+the steps slowly in the order they really happened. Click a step to see its
+line. Three limits:
+
+- The wording of those log lines belongs to NoPorts and can change in a new
+  release. A step whose line is not found is marked "stated, not shown", and
+  nothing else breaks.
+- Two steps show less than their titles say, and the page says so. For step 5
+  the log shows the device's reply arriving, not that it carries the session
+  key. For step 8 it shows NoPorts choosing `127.0.0.1` as its target, not the
+  moment it connected.
+- That the relay cannot read the session is still stated, not shown.
+
+**What the web page costs.** To run commands in the other boxes, the `ui` box is
+given Docker's control socket. That is full control of Docker on your computer,
+so the box is built to be hard to reach:
+
+- It starts only when you run `./demo.sh web`.
+- Its port is published on `127.0.0.1` only, so other computers cannot connect.
+- It answers only requests that carry the key in the address `demo.sh` prints.
+  A new key is made each time.
+- It sits on its own network. The scanner's view of the device is unchanged,
+  and the device still publishes no ports.
+
+`./teardown.sh` removes it with everything else.
+
+**In a codespace.** The "Open in GitHub Codespaces" button in the README
+starts a private Linux machine on GitHub, sets the demo up there, and opens the
+web page. Things to know:
+
+- Nobody has run the demo in a codespace yet. If you try it, please open an
+  issue to say how it went.
+- It runs on GitHub's machine, not your computer, and uses your GitHub
+  account's Codespaces allowance.
+- There is no key in the address, because GitHub already limits the page to
+  you. Keep the forwarded port private: the page can run commands in the boxes.
+
 ## What this does not prove
 
 - **No real NAT or firewall traversal.** Everything runs on one host, on one
@@ -111,7 +173,7 @@ yourself.
 
 | File | Purpose |
 |---|---|
-| [compose.yaml](../compose.yaml) | The five boxes and the one network. Note that no service has a `ports:` section. |
+| [compose.yaml](../compose.yaml) | The five boxes and their one network: none of them has a `ports:` section. Then the optional `ui` box for the web page, which has one. |
 | [Dockerfile](../Dockerfile) | Builds the device, client, relay and scanner images from Debian and the official NoPorts release tarball, checked against the release's own checksums. |
 | [device/sshd_config](../device/sshd_config) | `ListenAddress 127.0.0.1` and key-only logins. |
 | [platform/atsigns](../platform/atsigns) | The three Atsigns that the platform creates at start-up. |
@@ -120,6 +182,9 @@ yourself.
 | [doctor.sh](../doctor.sh) | Ordered checks, each with a cause and a fix. |
 | [teardown.sh](../teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
 | [docs/noports-demo-explained.pptx](noports-demo-explained.pptx) | Slide deck explaining the demo, with diagrams. |
+| [ui/server.py](../ui/server.py) | The web page's server: runs `demo.sh`, reads the device's state and the daemons' logs, and runs the "look for yourself" commands. Python standard library only. |
+| [ui/static/](../ui/static/) | The page itself: one HTML file, one stylesheet, one script, no libraries. |
+| [.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json) | Tells GitHub Codespaces how to run the demo. |
 | [scripts/in-container/](../scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an Atsign, open the SSH session, and list sockets. |
 
 ## Versions
@@ -189,8 +254,9 @@ reading it and running it:
   [Running on Windows](#running-on-windows).
 - Not supported: 32-bit ARM and other CPUs (no platform image). Windows outside
   WSL 2 (PowerShell, Command Prompt, Git Bash).
-- After you edit the Dockerfile or `scripts/in-container/`, run `docker compose build`.
-  `demo.sh` rebuilds only when images are missing or the NoPorts version changes.
+- `demo.sh` rebuilds the images when they are missing, when the NoPorts version
+  changes, or when `scripts/in-container/` changes. After you edit the
+  Dockerfile, run `docker compose --profile ui build` yourself.
 
 ## Running on Windows
 

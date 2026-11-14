@@ -22,6 +22,7 @@ open)
             --device "$DEVICE_NAME" --srvd "$RELAY_ATSIGN" --root-server "$ROOT_SERVER" \
             --identity-file ~/.ssh/id_ed25519 --send-ssh-public-key \
             --remote-user-name demo --output-execution-command 2>&1)
+    printf '%s\n' "$out" > /tmp/sshnp.log   # read by the web page (ui/server.py)
     port=$(printf '%s\n' "$out" | sed -n 's/^ssh -p \([0-9]*\) .*/\1/p')
     [ -n "$port" ] && break
     echo "  sshnp attempt $attempt failed:" >&2

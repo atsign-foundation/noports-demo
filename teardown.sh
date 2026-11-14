@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Removes everything the demo created: all five containers, the network, and
+# Removes everything the demo created: every container, the networks, and
 # the Docker volumes holding each box's Atsign keys. The platform keeps its
 # state inside its container, so that goes too. Nothing is left on your disk.
 #
@@ -11,7 +11,7 @@ rmi=""
 [ "${1:-}" = --images ] && rmi="--rmi all"
 heading "Teardown"
 # shellcheck disable=SC2086  # $rmi is empty or two words
-dc down --volumes --remove-orphans --timeout 5 $rmi
+dc --profile ui down --volumes --remove-orphans --timeout 5 $rmi
 
 left=$(docker ps -aq --filter label=com.docker.compose.project=noports-demo)
 vols=$(docker volume ls -q --filter label=com.docker.compose.project=noports-demo)

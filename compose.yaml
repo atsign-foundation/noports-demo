@@ -12,7 +12,8 @@ name: noports-demo
 #                                    reachable)
 #                                  client (sshnp)
 #
-# No service publishes a port to your host.
+# None of these five publishes a port to your host. (The optional ui box at
+# the end of this file does: it serves the web page.)
 
 x-noports: &noports
   env_file: .env
@@ -76,8 +77,31 @@ services:
     hostname: scanner
     networks: [net]
 
+  # Optional sixth box, started only by "./demo.sh web". It serves the demo as
+  # a web page. It is the one box that publishes a port, and only on 127.0.0.1.
+  # To run the demo's commands in the other boxes it is given Docker's control
+  # socket, which is full control of Docker on this computer: that is why it
+  # is opt-in, answers only locally, and wants the key that demo.sh prints.
+  # It sits on its own network, so the scanner's view of the device is unchanged.
+  ui:
+    profiles: [ui]
+    build: { context: ., target: ui }
+    image: noports-demo/ui
+    hostname: ui
+    init: true
+    working_dir: /demo
+    command: ["python3", "ui/server.py"]
+    environment:
+      DEMO_UI_TOKEN: "${DEMO_UI_TOKEN:-}"
+    ports: ["127.0.0.1:${DEMO_UI_PORT:-8080}:8080"]
+    volumes:
+      - .:/demo:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [ui-net]
+
 networks:
   net:
+  ui-net:
 
 volumes:
   # Each box's Atsign keys, in its own Docker volume. Removed by teardown.

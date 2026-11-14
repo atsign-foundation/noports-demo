@@ -34,6 +34,23 @@ no accounts and no sign-up.
 - Something broke? Run `./doctor.sh`.
 - Finished? Run `./teardown.sh` to remove everything.
 
+## Prefer a web page?
+
+```
+./demo.sh web
+```
+
+This opens the same demo in your browser. You click through it step by step,
+watch a diagram of the connection being made, and press buttons to look
+inside the machines yourself.
+
+## Nothing to install?
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/atsign-foundation/noports-demo)
+
+This runs the web page version on a GitHub machine, in your browser. You need
+a GitHub account. The first start takes a few minutes.
+
 ## Want more?
 
 - [Slide deck](docs/noports-demo-explained.pptx): how it works, in pictures.
