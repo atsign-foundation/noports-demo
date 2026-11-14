@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NoPorts demo</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="https://atsign.com" target="_blank" rel="noopener">
+    <picture>
+      <source srcset="atsign-logo-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="atsign-logo-light.png" alt="Atsign" width="126" height="44">
+    </picture>
+  </a>
+  <div class="title">
+    <h1>Log in to a machine that has no open ports</h1>
+    <p class="sub">A <a href="https://noports.com" target="_blank" rel="noopener">NoPorts</a> demo from Atsign, running live in Docker. Everything on this page is real output.</p>
+  </div>
+  <span id="status" class="pill">Loading</span>
+</header>
+
+<main>
+  <section id="story" aria-live="polite">
+    <article class="act" id="intro">
+      <h2>What you are about to see</h2>
+      <p>Remote access normally needs an open port: a door on the machine that attackers can find and knock on. NoPorts needs no door.</p>
+      <ol>
+        <li>Five small stand-in machines (Docker containers) are already running. One is the <b>device</b> we will log in to. Another is an <b>attacker</b> with a port scanner.</li>
+        <li>The attacker scans all 65,535 of the device's ports.</li>
+        <li>We log in to the device over SSH, through NoPorts.</li>
+        <li>While we are logged in, the attacker scans again.</li>
+      </ol>
+      <p>At each stop you can look inside the machines yourself. Please do.</p>
+    </article>
+    <article class="act next-up" id="whats-next" hidden>
+      <p class="kicker">They can't attack what they can't see</p>
+      <h2>Ready to try it on your own machines?</h2>
+      <p>You have just logged in to a machine with no open ports, and watched an attacker find nothing. This demo used throwaway Atsigns, with every machine on one computer. NoPorts does the same for real servers and devices, with your own Atsigns.</p>
+      <p class="links">
+        <a class="cta" href="https://my.noports.com/no-ports-plans" target="_blank" rel="noopener">Try NoPorts for free</a>
+        <a href="https://docs.noports.com/reference/how-it-works" target="_blank" rel="noopener">Learn how it works</a>
+        <a href="https://docs.noports.com" target="_blank" rel="noopener">Read the documentation</a>
+      </p>
+    </article>
+  </section>
+
+  <aside>
+    <section class="card" id="diagram-card">
+      <h3>How the session is made</h3>
+      <div id="diagram"></div>
+      <div class="legend">
+        <span><i class="k msg"></i>message through the atServers</span>
+        <span><i class="k tcp"></i>connection, opened by the tail end</span>
+        <span><i class="k ssh"></i>SSH, end to end</span>
+      </div>
+      <p id="steps-hint" class="hint">The nine steps light up after you connect, in step 3. Each one is taken from what the NoPorts programs logged.</p>
+      <div class="replay" hidden id="replay-bar">
+        <button id="replay" class="small">Replay slowly</button>
+        <span class="hint">Really took <b id="took"></b>. Click a step to see its evidence.</span>
+      </div>
+      <ol id="steps"></ol>
+    </section>
+
+    <section class="card" id="live-card">
+      <h3>The device, right now <span id="live-dot" class="dot"></span></h3>
+      <p id="live-summary" class="hint">Waiting for the device.</p>
+      <h4>Listening sockets <code>ss -tuln</code></h4>
+      <pre id="live-listen" class="term small"></pre>
+      <h4>Connections <code>ss -tn state established</code></h4>
+      <pre id="live-conn" class="term small"></pre>
+      <p id="live-published" class="hint"></p>
+    </section>
+  </aside>
+</main>
+
+<footer class="bar">
+  <button id="go" class="primary" disabled>Start the demo</button>
+  <span id="go-hint" class="hint"></span>
+  <span class="made">NoPorts is made by <a href="https://atsign.com" target="_blank" rel="noopener">Atsign</a></span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

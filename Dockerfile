@@ -1,4 +1,5 @@
-# One Dockerfile, four small images (build targets): device, client, relay, scanner.
+# One Dockerfile, five small images (build targets): device, client, relay,
+# scanner, and ui (the optional web page).
 # NoPorts comes from the official release tarball, checked against the
 # release's own checksums.txt. NOPORTS_VERSION is a tag such as v5.18.2, or
 # "latest" (demo.sh resolves "latest" to a tag before building, so a new
@@ -73,3 +74,13 @@ FROM ${DEBIAN} AS scanner
 RUN apt-get update && apt-get install -y --no-install-recommends nmap \
  && rm -rf /var/lib/apt/lists/*
 CMD ["sleep", "infinity"]
+
+# ---- ui: serves the demo as a web page (optional; "./demo.sh web") ----------
+# Python for the small web server, and the Docker CLI with Compose so the
+# server can run demo.sh, which runs commands in the other boxes. The server
+# and the page are not copied in: the repository is mounted at /demo.
+FROM ${DEBIAN} AS ui
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 docker-cli docker-compose \
+ && rm -rf /var/lib/apt/lists/*
+EXPOSE 8080

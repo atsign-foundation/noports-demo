@@ -1,0 +1,18 @@
+// Runs the demo in a GitHub codespace: a private Linux machine in the cloud,
+// used from a browser. Nothing to install. See docs/DETAILS.md, "The web page".
+{
+  "name": "NoPorts demo",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  // The demo is a set of Docker containers, so the codespace needs Docker.
+  // "moby": false installs Docker's own packages. The default (Moby) packages
+  // do not exist for every Linux release, and the codespace then fails to
+  // start; that is what happened with Debian 13.
+  "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": false } },
+  // The demo's web page. A codespace's forwarded ports are private to you
+  // unless you change them: leave this one private, because the page can run
+  // commands in the demo's boxes.
+  "forwardPorts": [8080],
+  "portsAttributes": { "8080": { "label": "NoPorts demo", "onAutoForward": "openBrowser" } },
+  // Sets the demo up and starts the web page each time you open the codespace.
+  "postAttachCommand": "./demo.sh web"
+}
