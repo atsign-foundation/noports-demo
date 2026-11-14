@@ -13,8 +13,8 @@ STEP=0; MODE=run
 for a in "$@"; do
   case "$a" in
     --step) STEP=1 ;;
-    shell)  MODE=shell ;;
-    web)    MODE=web ;;
+    shell|--shell) MODE=shell ;;
+    web|--web)     MODE=web ;;
     -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
     *) echo "Unknown argument: $a (try --help)"; exit 64 ;;
   esac
