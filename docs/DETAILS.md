@@ -137,8 +137,8 @@ so the box is built to be hard to reach:
 starts a private Linux machine on GitHub, sets the demo up there, and opens the
 web page. Things to know:
 
-- Nobody has run the demo in a codespace yet. If you try it, please open an
-  issue to say how it went.
+- It has been run in a codespace once, on the smallest machine size. If it
+  misbehaves for you, please open an issue.
 - It runs on GitHub's machine, not your computer, and uses your GitHub
   account's Codespaces allowance.
 - There is no key in the address, because GitHub already limits the page to
