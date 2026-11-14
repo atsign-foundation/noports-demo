@@ -29,13 +29,16 @@ let looks = [];        // "look for yourself" commands waiting for the next paus
 let caughtUp = false;  // false while replaying events that happened before the page loaded
 
 function resetStory() {
-  story.querySelectorAll('.act:not(#intro)').forEach((a) => a.remove());
+  story.querySelectorAll('.act:not(#intro):not(#whats-next)').forEach((a) => a.remove());
   act = block = null; blockKind = ''; looks = [];
   showHandshake(null);
 }
 
+// New acts go above the closing "what next" card, which stays last.
+const addAct = (a) => story.insertBefore(a, $('whats-next'));
+
 function ensureAct() {
-  if (!act) { act = el('article', 'act'); story.append(act); }
+  if (!act) { act = el('article', 'act'); addAct(act); }
   return act;
 }
 
@@ -50,7 +53,7 @@ function render(e) {
   const t = e.t;
   switch (e.k) {
     case 'heading':
-      act = el('article', 'act'); act.append(el('h2', '', t)); story.append(act);
+      act = el('article', 'act'); act.append(el('h2', '', t)); addAct(act);
       act.dataset.title = t; block = null; blockKind = '';
       break;
     case 'say':
@@ -144,6 +147,7 @@ function setState(s) {
   $('status').textContent = pill; $('status').className = 'pill ' + s;
   go.textContent = button; go.disabled = s === 'running';
   $('go-hint').textContent = hint;
+  $('whats-next').hidden = s !== 'done';
 }
 
 go.onclick = async () => {

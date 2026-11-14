@@ -8,9 +8,15 @@
 </head>
 <body>
 <header class="top">
-  <div>
+  <a class="brand" href="https://atsign.com" target="_blank" rel="noopener">
+    <picture>
+      <source srcset="atsign-logo-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="atsign-logo-light.png" alt="Atsign" width="126" height="44">
+    </picture>
+  </a>
+  <div class="title">
     <h1>Log in to a machine that has no open ports</h1>
-    <p class="sub">A NoPorts demo, running live in Docker on this computer. Everything on this page is real output.</p>
+    <p class="sub">A <a href="https://noports.com" target="_blank" rel="noopener">NoPorts</a> demo from Atsign, running live in Docker. Everything on this page is real output.</p>
   </div>
   <span id="status" class="pill">Loading</span>
 </header>
@@ -27,6 +33,14 @@
         <li>While we are logged in, the attacker scans again.</li>
       </ol>
       <p>At each stop you can look inside the machines yourself. Please do.</p>
+    </article>
+    <article class="act next-up" id="whats-next" hidden>
+      <h2>Ready to try it on your own machines?</h2>
+      <p>This demo used throwaway Atsigns, with every machine on one computer. NoPorts does the same for real servers and devices, with your own Atsigns.</p>
+      <p class="links">
+        <a class="cta" href="https://noports.com" target="_blank" rel="noopener">Get NoPorts</a>
+        <a href="https://docs.noports.com" target="_blank" rel="noopener">Read the documentation</a>
+      </p>
     </article>
   </section>
 
@@ -62,6 +76,7 @@
 <footer class="bar">
   <button id="go" class="primary" disabled>Start the demo</button>
   <span id="go-hint" class="hint"></span>
+  <span class="made">NoPorts is made by <a href="https://atsign.com" target="_blank" rel="noopener">Atsign</a></span>
 </footer>
 
 <script src="app.js"></script>

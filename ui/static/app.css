@@ -21,8 +21,15 @@ h4 { font-size: .8rem; margin: .9rem 0 .3rem; color: var(--muted); font-weight: 
 code { font: .85em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .hint, .sub { color: var(--muted); font-size: .88rem; margin: .3rem 0; }
 
-.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
-  padding: 1.1rem 1.25rem; border-bottom: 3px solid var(--accent); background: var(--card); }
+.top { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  padding: .9rem 1.25rem; border-bottom: 3px solid var(--accent); background: var(--card); }
+.top .brand { display: block; line-height: 0; padding-right: 1.25rem; border-right: 1px solid var(--line); }
+/* The light-background logo file has blank space around it; the dark one does not. */
+.top .brand img { height: 60px; width: auto; display: block; margin: -8px -8px -8px -14px; }
+@media (prefers-color-scheme: dark) { .top .brand img { height: 40px; margin: 0; } }
+.top .title { flex: 1; min-width: 16rem; }
+a { color: var(--accent-ink); }
+@media (max-width: 40rem) { .top .brand { border-right: 0; padding-right: 0; } }
 .pill { font-size: .8rem; padding: .2rem .7rem; border-radius: 999px; border: 1px solid var(--line);
   white-space: nowrap; color: var(--muted); }
 .pill.running { color: var(--blue); border-color: var(--blue); }
@@ -120,3 +127,12 @@ button.small { font-size: .8rem; padding: .25rem .65rem; }
 .dot.ok { background: var(--green); } .dot.bad { background: var(--red); }
 .head.msg { fill: var(--accent); } .head.tcp, .head.join { fill: var(--blue); }
 .head.local { fill: var(--muted); } .head.ssh { fill: var(--green); } .head.scan { fill: var(--red); }
+
+/* Atsign branding: the closing card and the credit in the bottom bar. */
+.next-up { border: 2px solid var(--accent); }
+.next-up[hidden] { display: none; }
+.next-up .links { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; margin-top: .9rem; }
+.cta { display: inline-block; background: var(--accent); color: #1a0d08; font-weight: 700; text-decoration: none;
+  padding: .55rem 1.3rem; border-radius: 8px; }
+.bar .made { margin-left: auto; color: var(--muted); font-size: .8rem; white-space: nowrap; }
+@media (max-width: 40rem) { .bar .made { display: none; } }

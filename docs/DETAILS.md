@@ -183,7 +183,7 @@ web page. Things to know:
 | [teardown.sh](../teardown.sh) | `docker compose down --volumes`, then a check that nothing is left. |
 | [docs/noports-demo-explained.pptx](noports-demo-explained.pptx) | Slide deck explaining the demo, with diagrams. |
 | [ui/server.py](../ui/server.py) | The web page's server: runs `demo.sh`, reads the device's state and the daemons' logs, and runs the "look for yourself" commands. Python standard library only. |
-| [ui/static/](../ui/static/) | The page itself: one HTML file, one stylesheet, one script, no libraries. |
+| [ui/static/](../ui/static/) | The page itself: one HTML file, one stylesheet, one script and the Atsign logo, with no libraries. |
 | [.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json) | Tells GitHub Codespaces how to run the demo. |
 | [scripts/in-container/](../scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an Atsign, open the SSH session, and list sockets. |
 

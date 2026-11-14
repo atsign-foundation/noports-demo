@@ -29,7 +29,7 @@ DEMO_DIR = os.path.dirname(HERE)
 TOKEN = os.environ.get("DEMO_UI_TOKEN", "")
 BOXES = ("device", "scanner", "client", "relay")
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-         ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml"}
+         ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png"}
 
 
 # ---------------------------------------------------------------------------
