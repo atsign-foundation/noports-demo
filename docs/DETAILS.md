@@ -144,6 +144,54 @@ web page. Things to know:
 - There is no key in the address, because GitHub already limits the page to
   you. Keep the forwarded port private: the page can run commands in the boxes.
 
+## The recorded web version
+
+<https://atsign-foundation.github.io/noports-demo/> is the same web page with
+nothing behind it: no Docker, no server, nothing to install. It plays back a
+recording of one real run of the demo.
+
+**How the recording is made.** A GitHub workflow
+([.github/workflows/site.yml](../.github/workflows/site.yml)) runs
+`./demo.sh record` on a GitHub machine. That sets the demo up as usual, runs
+it once, and at every pause saves ([ui/record.py](../ui/record.py)):
+
+- what `demo.sh` printed, and when;
+- the device's listening sockets and connections at that moment;
+- the session steps found in the NoPorts programs' logs;
+- the output of each "look for yourself" command, run there and then.
+
+Nobody writes or edits the recording by hand. If the run does not show two
+clean port scans, an open session and the session steps in the logs, the
+workflow fails and publishes nothing.
+
+**When.** On every change to `trunk`, and every Monday, so the recording
+follows new NoPorts releases. The page says when it was recorded and with
+which NoPorts version.
+
+**What is different from the live page.**
+
+- The "look for yourself" buttons show what each command printed at that point
+  in the recorded run. You cannot type your own commands.
+- "The device, right now" shows the device as it was at that point.
+- A recording proves less than a live run: you are trusting that it was not
+  edited. To check for yourself, run the demo live.
+
+**As a container.** The same workflow publishes the recorded page as a
+container image, for showing it without Internet access or hosting it
+yourself:
+
+```
+docker run --rm -p 8080:8080 ghcr.io/atsign-foundation/noports-demo-web
+```
+
+Then open <http://localhost:8080>. The image holds only the web page and the
+recording behind a web server (nginx, not running as root). It contains no
+NoPorts, no keys and no access to Docker.
+
+**Making one yourself.** `./demo.sh record` writes the page and a fresh
+recording to `site/`. `python3 -m http.server -d site 8000` serves it at
+<http://localhost:8000>.
+
 ## What this does not prove
 
 - **No real NAT or firewall traversal.** Everything runs on one host, on one
@@ -184,6 +232,8 @@ web page. Things to know:
 | [docs/noports-demo-explained.pptx](noports-demo-explained.pptx) | Slide deck explaining the demo, with diagrams. |
 | [ui/server.py](../ui/server.py) | The web page's server: runs `demo.sh`, reads the device's state and the daemons' logs, and runs the "look for yourself" commands. Python standard library only. |
 | [ui/static/](../ui/static/) | The page itself: one HTML file, one stylesheet, one script and the Atsign logo, with no libraries. |
+| [ui/record.py](../ui/record.py) | Records one real run for the recorded web version; started by `./demo.sh record`. |
+| [.github/workflows/site.yml](../.github/workflows/site.yml) | Records the demo on a GitHub machine and publishes the recording as a website and as a container image. |
 | [.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json) | Tells GitHub Codespaces how to run the demo. |
 | [scripts/in-container/](../scripts/in-container/) | Small scripts that run inside the boxes: start the daemons, activate an Atsign, open the SSH session, and list sockets. |
 

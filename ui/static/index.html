@@ -16,10 +16,17 @@
   </a>
   <div class="title">
     <h1>Log in to a machine that has no open ports</h1>
-    <p class="sub">A <a href="https://noports.com" target="_blank" rel="noopener">NoPorts</a> demo from Atsign, running live in Docker. Everything on this page is real output.</p>
+    <p class="sub live-only">A <a href="https://noports.com" target="_blank" rel="noopener">NoPorts</a> demo from Atsign, running live in Docker. Everything on this page is real output.</p>
+    <p class="sub replay-only">A <a href="https://noports.com" target="_blank" rel="noopener">NoPorts</a> demo from Atsign. This is a recording of a real run; every line of output is what the programs printed.</p>
   </div>
   <span id="status" class="pill">Loading</span>
 </header>
+
+<p class="recorded replay-only">
+  <b>You are watching a recording.</b>
+  Nothing is running on your computer or on a server. <span id="recorded-when"></span>
+  <a href="https://github.com/atsign-foundation/noports-demo#try-it" target="_blank" rel="noopener">Run it live yourself</a>
+</p>
 
 <main>
   <section id="story" aria-live="polite">
@@ -27,12 +34,13 @@
       <h2>What you are about to see</h2>
       <p>Remote access normally needs an open port: a door on the machine that attackers can find and knock on. NoPorts needs no door.</p>
       <ol>
-        <li>Five small stand-in machines (Docker containers) are already running. One is the <b>device</b> we will log in to. Another is an <b>attacker</b> with a port scanner.</li>
+        <li><span class="live-only">Five small stand-in machines (Docker containers) are already running.</span><span class="replay-only">The run used five small stand-in machines (Docker containers).</span> One is the <b>device</b> we will log in to. Another is an <b>attacker</b> with a port scanner.</li>
         <li>The attacker scans all 65,535 of the device's ports.</li>
         <li>We log in to the device over SSH, through NoPorts.</li>
         <li>While we are logged in, the attacker scans again.</li>
       </ol>
-      <p>At each stop you can look inside the machines yourself. Please do.</p>
+      <p class="live-only">At each stop you can look inside the machines yourself. Please do.</p>
+      <p class="replay-only">At each stop you can see what was inside the machines at that moment. Please look.</p>
     </article>
     <article class="act next-up" id="whats-next" hidden>
       <p class="kicker">They can't attack what they can't see</p>
@@ -42,6 +50,7 @@
         <a class="cta" href="https://my.noports.com/no-ports-plans" target="_blank" rel="noopener">Try NoPorts for free</a>
         <a href="https://docs.noports.com/reference/how-it-works" target="_blank" rel="noopener">Learn how it works</a>
         <a href="https://docs.noports.com" target="_blank" rel="noopener">Read the documentation</a>
+        <a class="replay-only" href="https://github.com/atsign-foundation/noports-demo#try-it" target="_blank" rel="noopener">Run this demo live</a>
       </p>
     </article>
   </section>
@@ -65,6 +74,7 @@
 
     <section class="card" id="live-card">
       <h3>The device, right now <span id="live-dot" class="dot"></span></h3>
+      <p class="hint replay-only">As it was at this point in the recorded run.</p>
       <p id="live-summary" class="hint">Waiting for the device.</p>
       <h4>Listening sockets <code>ss -tuln</code></h4>
       <pre id="live-listen" class="term small"></pre>

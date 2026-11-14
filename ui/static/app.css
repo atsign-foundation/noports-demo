@@ -30,6 +30,14 @@ code { font: .85em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .top .title { flex: 1; min-width: 16rem; }
 a { color: var(--accent-ink); }
 @media (max-width: 40rem) { .top .brand { border-right: 0; padding-right: 0; } }
+/* The published website plays a recording (see app.js); a few lines differ. */
+.replay-only { display: none; }
+[data-mode="replay"] .live-only { display: none; }
+[data-mode="replay"] p.replay-only { display: block; }
+[data-mode="replay"] a.replay-only, [data-mode="replay"] span.replay-only { display: inline; }
+.recorded { margin: 0; padding: .55rem 1.25rem; background: var(--look-bg); border-bottom: 1px solid var(--look-line);
+  font-size: .9rem; }
+.recorded a { font-weight: 700; white-space: nowrap; }
 .pill { font-size: .8rem; padding: .2rem .7rem; border-radius: 999px; border: 1px solid var(--line);
   white-space: nowrap; color: var(--muted); }
 .pill.running { color: var(--blue); border-color: var(--blue); }

@@ -1,7 +1,13 @@
 // The demo's web page. It shows what ../server.py sends: the events that
 // demo.sh printed, the device's live state, and the session handshake as the
 // NoPorts programs logged it. No libraries.
+//
+// The page has a second mode, "replay", for the published website, where
+// there is no server.py and no Docker. There it plays back recording.json,
+// which ../record.py saved from one real run (see "./demo.sh record").
 'use strict';
+
+const REPLAY = document.documentElement.dataset.mode === 'replay';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
@@ -11,12 +17,64 @@ const el = (tag, cls, text) => {
   return e;
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const api = (path, body) =>
+const server = (path, body) =>
   fetch(path, body === undefined ? {} : {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-NoPorts-Demo': '1' },
     body: JSON.stringify(body),
   }).then((r) => r.json());
+let api = server;      // in replay mode, the recording answers instead
+
+// ---------------------------------------------------------------------------
+// Replay mode: answers the same requests as server.py, from a recording.
+// The recording is a list of segments, one per stretch of the demo between
+// pauses. Each holds the events of that stretch and what was true at its end.
+// ---------------------------------------------------------------------------
+function recorded(rec) {
+  let run = 0, state = 'idle', events = [], at = -1, waiting = [];
+  const wake = () => waiting.splice(0).forEach((f) => f());
+  const changed = () => new Promise((r) => { waiting.push(r); setTimeout(r, 25000); });
+
+  async function play() {
+    const mine = run, segment = rec.segments[++at];
+    let last = 0;
+    state = 'running'; wake();
+    for (const e of segment.events) {
+      // Keep the rhythm of the real run, but do not make anyone sit through a port scan.
+      await sleep(Math.min(Math.max(e.ms - last, 0), 500)); last = e.ms;
+      if (mine !== run) return;
+      events.push({ k: e.k, t: e.t });
+      if (e.k === 'pause') state = 'paused';
+      wake();
+    }
+    state = segment.state; wake();
+  }
+  // What was true at the last pause the page has reached.
+  const reached = () => rec.segments[state === 'running' ? at - 1 : at];
+
+  return async (path, body) => {
+    const [name, query] = path.split('?');
+    const q = new URLSearchParams(query || '');
+    switch (name) {
+      case '/api/start': run++; events = []; at = -1; play(); return { ok: true };
+      case '/api/next': if (state === 'paused') play(); return { ok: true };
+      case '/api/events': {
+        const from = +q.get('run') === run ? +q.get('from') : 0;
+        if (+q.get('run') === run && events.length <= from) await changed();
+        return { run, state, events: events.slice(from), next: events.length };
+      }
+      case '/api/live': return (reached() || rec).live;
+      case '/api/handshake': return (reached() || {}).handshake || { ready: false };
+      case '/api/exec': {
+        await sleep(400);
+        const segment = rec.segments[body.pause - 1] || {};
+        return (segment.exec || {})[body.box + '\n' + body.command]
+          || { code: 1, output: 'This command was not part of the recording.' };
+      }
+    }
+    return {};
+  };
+}
 
 // ---------------------------------------------------------------------------
 // The story: demo.sh's events, as headings, prose, terminal blocks and prompts.
@@ -27,10 +85,11 @@ let block = null;      // the element new lines go into
 let blockKind = '';
 let looks = [];        // "look for yourself" commands waiting for the next pause
 let caughtUp = false;  // false while replaying events that happened before the page loaded
+let pauses = 0;        // how many pauses the story has reached
 
 function resetStory() {
   story.querySelectorAll('.act:not(#intro):not(#whats-next)').forEach((a) => a.remove());
-  act = block = null; blockKind = ''; looks = [];
+  act = block = null; blockKind = ''; looks = []; pauses = 0; handshakeFor = '';
   showHandshake(null);
 }
 
@@ -82,6 +141,7 @@ function render(e) {
       looks.push(t.split('|'));
       break;
     case 'pause':
+      pauses++;
       if (looks.length) ensureAct().append(lookBox(looks));
       looks = []; block = null; blockKind = '';
       if (/^[34]\./.test(act && act.dataset.title || '')) loadHandshake();
@@ -93,11 +153,15 @@ function render(e) {
   }
 }
 
-// The loud prompt: buttons that run a real command in a real box.
+// The loud prompt: buttons that run a real command in a real box. In replay
+// mode they show what that command printed at this pause of the recorded run.
 function lookBox(specs) {
   const box = el('div', 'look');
+  const pause = pauses;
   box.append(el('h3', '', 'LOOK FOR YOURSELF'));
-  box.append(el('p', '', "Don't take our word for it. Each button runs a real command inside the machine named on it, right now."));
+  box.append(el('p', '', REPLAY
+    ? "Don't take our word for it. Each button shows what that command printed inside the machine named on it, at this point in the recorded run."
+    : "Don't take our word for it. Each button runs a real command inside the machine named on it, right now."));
   const presets = el('div', 'presets');
   const result = el('pre', 'term result'); result.hidden = true;
   const run = async (where, command) => {
@@ -105,7 +169,7 @@ function lookBox(specs) {
     result.hidden = false; result.textContent = '';
     result.append(el('span', 'cmd', '$ ' + command), el('span', 'note', '   # in the ' + where + ' box'), '\nRunning...');
     let r;
-    try { r = await api('/api/exec', { box: where, command }); }
+    try { r = await api('/api/exec', { box: where, command, pause }); }
     catch (err) { r = { output: 'Could not reach the demo. Is it still running?', code: 1 }; }
     result.lastChild.remove();
     result.append('\n' + (r.output || '(no output)') + (r.code ? '\n(exit code ' + r.code + ')' : '') + '\n');
@@ -124,8 +188,18 @@ function lookBox(specs) {
   select.setAttribute('aria-label', 'Machine');
   form.append(select, input, el('button', '', 'Run'));
   form.onsubmit = (ev) => { ev.preventDefault(); if (input.value.trim()) run(select.value, input.value.trim()); };
-  box.append(presets, form, result);
+  if (REPLAY) {
+    const live = el('p', 'hint');
+    live.append('To type your own commands, ', runItLive('run the demo live'), '.');
+    box.append(presets, result, live);
+  } else box.append(presets, form, result);
   return box;
+}
+
+function runItLive(text) {
+  const a = el('a', '', text);
+  a.href = 'https://github.com/atsign-foundation/noports-demo#try-it'; a.target = '_blank'; a.rel = 'noopener';
+  return a;
 }
 
 // ---------------------------------------------------------------------------
@@ -140,6 +214,10 @@ const LABELS = {
   done: ['Finished', 'Run it again', 'That was the whole demo.'],
   failed: ['Stopped', 'Try again', 'Something went wrong; the details are above.'],
 };
+if (REPLAY) {
+  LABELS.running[2] = 'Playing back what the real run printed.';
+  LABELS.done[1] = 'Play it again';
+}
 
 function setState(s) {
   state = s;
@@ -187,7 +265,7 @@ async function watchDevice() {
         ? 'Docker publishes these device ports: ' + d.published
         : 'Docker publishes no ports for the device.';
     } catch (err) { $('live-dot').className = 'dot'; }
-    await sleep(2000);
+    await sleep(REPLAY ? 500 : 2000);
   }
 }
 
@@ -308,7 +386,22 @@ async function loadHandshake() {
   } catch (err) { /* the diagram stays as it was */ }
 }
 
+async function begin() {
+  if (REPLAY) {
+    try {
+      const rec = await fetch('recording.json').then((r) => r.json());
+      api = recorded(rec);
+      const day = new Date(rec.recorded + 'T12:00:00Z').toLocaleDateString(undefined, { dateStyle: 'long' });
+      $('recorded-when').textContent = 'It was recorded on ' + day + ' with NoPorts ' + rec.noports + '.';
+    } catch (err) {
+      $('status').textContent = 'No recording'; $('status').className = 'pill failed';
+      return;
+    }
+  }
+  follow();
+  watchDevice();
+}
+
 $('replay').onclick = replay;
 drawDiagram();
-follow();
-watchDevice();
+begin();

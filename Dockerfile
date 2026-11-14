@@ -1,11 +1,13 @@
 # One Dockerfile, five small images (build targets): device, client, relay,
-# scanner, and ui (the optional web page).
+# scanner, and ui (the optional web page). A sixth target, site, is built
+# only by the GitHub workflow: the recorded web version behind a web server.
 # NoPorts comes from the official release tarball, checked against the
 # release's own checksums.txt. NOPORTS_VERSION is a tag such as v5.18.2, or
 # "latest" (demo.sh resolves "latest" to a tag before building, so a new
 # release means a fresh build rather than a stale cached one).
 
 ARG DEBIAN=debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+ARG NGINX=nginxinc/nginx-unprivileged:stable-alpine-slim@sha256:5d8bb9437d74a600ec5dbf90c035451c724dc33eac8d3a71078f6f8612c345f6
 
 # ---- fetch the NoPorts release tarball and verify it --------------------------
 FROM ${DEBIAN} AS fetch
@@ -84,3 +86,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 docker-cli docker-compose \
  && rm -rf /var/lib/apt/lists/*
 EXPOSE 8080
+
+# ---- site: the recorded web version, on its own (not part of the demo) ------
+# "./demo.sh record" writes site/: the web page and a recording of one real
+# run. This image is that folder behind nginx, running as a normal user, on
+# port 8080. It holds no NoPorts, no keys and no Docker access.
+#   docker run --rm -p 8080:8080 ghcr.io/atsign-foundation/noports-demo-web
+FROM ${NGINX} AS site
+LABEL org.opencontainers.image.source="https://github.com/atsign-foundation/noports-demo" \
+      org.opencontainers.image.title="NoPorts demo, recorded web version" \
+      org.opencontainers.image.description="A recording of the NoPorts demo, played back as a web page on port 8080."
+COPY site/ /usr/share/nginx/html/

@@ -6,6 +6,7 @@
 #   ./demo.sh --step   same, pausing between acts
 #   ./demo.sh web      the same demo as a web page, at http://localhost:8080
 #   ./demo.sh shell    open an interactive SSH shell on the device via NoPorts
+#   ./demo.sh record   record a run into site/: the web page, playable without Docker
 #   ./doctor.sh        diagnose problems        ./teardown.sh   remove everything
 . "$(dirname "$0")/scripts/lib.sh"
 
@@ -15,7 +16,8 @@ for a in "$@"; do
     --step) STEP=1 ;;
     shell|--shell) MODE=shell ;;
     web|--web)     MODE=web ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    record)        MODE=record ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
     *) echo "Unknown argument: $a (try --help)"; exit 64 ;;
   esac
 done
@@ -233,6 +235,27 @@ if [ "$MODE" = web ]; then
     fi
   fi
   say "When you are done:  ./teardown.sh"
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# ./demo.sh record: run the demo once for real, in the ui box, and save what
+# happened (ui/record.py). site/ then holds the web page and that recording:
+# a plain website that plays the run back, for people without Docker. A
+# GitHub workflow publishes it (.github/workflows/site.yml).
+# ---------------------------------------------------------------------------
+if [ "$MODE" = record ]; then
+  say "Building the web page's box..."
+  quietly dc --profile ui build ui || die "Could not build the web page's box." "Docker said: $LAST_OUT"
+  rm -rf site && mkdir site && cp ui/static/* site/
+  say "Recording a real run of the demo (about a minute)..."
+  dc --profile ui run --rm -T ui python3 ui/record.py > site/recording.json \
+    || { rm -rf site; die "The recording failed."; }
+  # The page plays a recording when its <html> tag says so; see ui/static/app.js.
+  sed 's/<html lang="en">/<html lang="en" data-mode="replay">/' ui/static/index.html > site/index.html
+  grep -q 'data-mode="replay"' site/index.html || die "Could not switch the page to its replay mode."
+  big "The recorded web version is in site/"
+  say "To look at it:  python3 -m http.server -d site 8000   then open http://localhost:8000"
   exit 0
 fi
 
