@@ -13,9 +13,17 @@ This demo shows it on your own computer:
 
 NoPorts is built to do the same for a real server or device.
 
+## Watch it
+
+**[Open the demo in your browser](https://atsign-foundation.github.io/noports-demo/)**
+
+Nothing to install. This plays back a recording of a real run of the demo,
+step by step.
+
 ## Try it
 
-You need [Docker](https://www.docker.com/get-started/). Then:
+To run it live on your own computer, you need
+[Docker](https://www.docker.com/get-started/). Then:
 
 ```
 git clone https://github.com/atsign-foundation/noports-demo
@@ -23,8 +31,8 @@ cd noports-demo
 ./demo.sh web
 ```
 
-This opens the demo in your browser. You click through it step by step,
-watch a diagram of the connection being made, and press buttons to look
+This opens the same page, but live. You click through it step by step, watch
+a diagram of the connection being made, and press buttons to run commands
 inside the machines yourself.
 
 On Windows, run these commands inside
@@ -47,12 +55,12 @@ cd noports-demo
 This runs the same demo as text in your terminal. It pauses after each step;
 press Enter to move on.
 
-## Nothing to install?
+## Live, with nothing to install?
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/atsign-foundation/noports-demo)
 
-This runs the web page version on a GitHub machine, in your browser. You need
-a GitHub account. The first start takes a few minutes.
+This runs the live web page on a GitHub machine, in your browser. You need a
+GitHub account. The first start takes a few minutes.
 
 ## Want more?
 
